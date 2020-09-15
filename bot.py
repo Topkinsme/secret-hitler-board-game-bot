@@ -233,7 +233,7 @@ async def notify(ctx):
         lastping=datetime.datetime.now()
         await ctx.send("<@&706855589883674744> , A game might start soon. Type !signup if you'd like to play.")
     else:
-        await ctx.send("Please wait {} longer. The last ping was on {}.".format(timedelta(seconds=30)-(datetime.datetime.now()-lastping),lastping))
+        await ctx.send("Please wait {} longer. The last ping was on {}.".format(timedelta(minutes=30)-(datetime.datetime.now()-lastping),lastping))
     dump()
     
     
