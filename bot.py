@@ -8,16 +8,23 @@ from discord.ext import tasks
 from discord.ext.commands import Bot
 import asyncio
 import random
+import os
 import time
 import datetime
 from datetime import date,timedelta
 import json
 import copy
+import pymongo,dns
+import keep_alive
 
-token = ""
+token = str(os.environ.get("tokeno"))
+dbpass=str(os.environ.get("dbpass"))
+
 
 bot = commands.Bot(command_prefix = "!")
 #bot.remove_command('help')
+client = pymongo.MongoClient("mongodb+srv://Topkinsme:"+dbpass+"@top-cluster.x2y8s.mongodb.net/<dbname>?retryWrites=true&w=majority")
+db = client.shbot
 
 @bot.event
 async def on_ready():
@@ -32,9 +39,12 @@ async def on_ready():
     await lobby.send("Who's up for a game?! :smiley:")
     await bot.change_presence(activity=discord.Game(name="Secret Hitler!", type=1))
     try:
-        with open('data.json','r') as f:
+        my_collection = db.main
+        data = my_collection.find_one()
+        gamestate = data['gamestate']
+        '''with open('data.json','r') as f:
             data = json.load(f)
-            print(data)
+            print(data)'''
         gamestate=data['gamestate']
         lastping=None
     except:
@@ -948,7 +958,11 @@ async def playerorder(ctx):
     await msg.edit(content=temp)
 
 def dump():
-    with open('data.json', 'w+') as f:
-        json.dump(data, f)
+    my_collection = db.main
+    my_collection.drop()
+    my_collection.insert_one(data)
+    '''with open('data.json', 'w+') as f:
+        json.dump(data, f)'''
 
+keep_alive.keep_alive()
 bot.run(token)
