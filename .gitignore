@@ -1,4 +1,8 @@
 pycache
 .replit
 poetry.lock
+<<<<<<< HEAD
 pyproject.toml
+=======
+pyproject.toml
+>>>>>>> origin/master
