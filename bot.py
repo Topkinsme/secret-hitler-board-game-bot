@@ -100,9 +100,9 @@ async def on_reaction_add(reaction,user):
     pass
     
     
-'''@bot.event
+@bot.event
 async def on_command_error(ctx,error):
-    await ctx.send(error)'''
+    await ctx.send(error)
     
 #Game Master
 
