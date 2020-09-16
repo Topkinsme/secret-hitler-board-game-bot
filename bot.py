@@ -64,6 +64,7 @@ async def on_ready():
         data["card"]=""
         data['failcounter']=0
         data['dekk']=[]
+        data['board']=0
         
 
         
@@ -199,6 +200,7 @@ async def compreset(ctx):
     data['power']={}
     data["card"]=""
     data['dekk']=[]
+    data['board']=0
     await ctx.send("A complete erasure of all data has been done.")
     dump()
 
@@ -342,21 +344,27 @@ async def start():
     if playernum==5:
         libn=3
         facn=1
+        data['board']=1
     elif playernum==6:
         libn=4
         facn=1
+        data['board']=1
     elif playernum==7:
         libn=4
         facn=2
+        data['board']=2
     elif playernum==8:
         libn=5
         facn=2
+        data['board']=2
     elif playernum==9:
         libn=5
         facn=3
+        data['board']=3
     elif playernum==10:
         libn=6
         facn=3
+        data['board']=3
     listoplayers=[]
     rolelist=[]
     for a in range(libn):
@@ -437,6 +445,7 @@ async def start():
 async def round():
     global gamestate
     global data
+    global canpass
     global prez
     guildd=bot.get_guild(706761016041537539)
     gamestate =2
@@ -445,18 +454,39 @@ async def round():
     if len(data['deck'])<3:
         await drawdekk()
     try:
-        ath=data['playerorder'][roundno]
+      if canpass==2:
+        ath=data['power']['prez']
         prez=discord.utils.get(guildd.members,id=int(ath))
-        guildd=bot.get_guild(706761016041537539)
-        data['power']['prez']=data['playerorder'][roundno]
+        canpass=0
+      else:
+        try:
+            data['roundno']+=1
+            ath=data['playerorder'][roundno]
+            prez=discord.utils.get(guildd.members,id=int(ath))
+            guildd=bot.get_guild(706761016041537539)
+            data['power']['prez']=data['playerorder'][roundno]
+        except:
+            data['roundno']=0
+            roundno=0
+            ath=data['playerorder'][roundno]
+            prez=discord.utils.get(guildd.members,id=int(ath))
+            guildd=bot.get_guild(706761016041537539)
+            data['power']['prez']=data['playerorder'][roundno]
     except:
-        data['roundno']=0
-        roundno=0
-        ath=data['playerorder'][roundno]
-        prez=discord.utils.get(guildd.members,id=int(ath))
-        guildd=bot.get_guild(706761016041537539)
-        data['power']['prez']=data['playerorder'][roundno]
-    await lobby.send("Your president is {}. Please nominate a person using !nominate.".format(prez))
+        try:
+            data['roundno']+=1
+            ath=data['playerorder'][roundno]
+            prez=discord.utils.get(guildd.members,id=int(ath))
+            guildd=bot.get_guild(706761016041537539)
+            data['power']['prez']=data['playerorder'][roundno]
+        except:
+            data['roundno']=0
+            roundno=0
+            ath=data['playerorder'][roundno]
+            prez=discord.utils.get(guildd.members,id=int(ath))
+            guildd=bot.get_guild(706761016041537539)
+            data['power']['prez']=data['playerorder'][roundno]
+    await lobby.send("Your president is {}. Please nominate a person using !nominate.".format(prez.mention))
     dump()
 
 @bot.command(aliases=["nom"])
@@ -677,7 +707,8 @@ async def legis():
                 await lobby.send("The chancellor wanted to veto this agenda but the president didn't agree.")
         else:
             await lobby.send("The chancellor did not want to veto this agenda.")
-    await userr.send("Alright you are passing a {}.".format(keep))        
+    await userr.send("Alright you are passing a {}.".format(keep)) 
+    data['failcounter']=0       
     await picked()
     dump()
 
@@ -685,6 +716,8 @@ async def picked():
     global gamestate
     global data
     global cankill
+    global cancheck
+    global canpass
     guildd=bot.get_guild(706761016041537539)
     role = discord.utils.get(guildd.roles, name="Players")
     chnl=discord.utils.get(guildd.channels,name="lobby")
@@ -692,12 +725,16 @@ async def picked():
     gamestate =5
     data['gamestate']=5
     await winchecks()
-    if cankill==1:
-        await lobby.send("The game will continue when the president kills someone.")
+    if cankill==1 or cancheck==1 or canpass==1:
+        await lobby.send("The game will continue when the president does something.")
         while cankill==1:
             await asyncio.sleep(5)
+        while cancheck==1:
+            await asyncio.sleep(5)
+        while canpass==1:
+            await asyncio.sleep(5)
+        
     await lobby.send("You have 20 seconds to discuss before the next round starts.")
-    data['roundno']+=1
     await asyncio.sleep(20)
     await lobby.send("Time for next round!")
     await round()
@@ -751,6 +788,77 @@ async def kill(ctx,user:discord.Member):
         await lobby.send("That person was not the secret hitler.")
     dump()
         
+@bot.command()
+@commands.has_role("Players")
+async def check(ctx,user:discord.Member):
+    '''Use this to check the person'''
+    global data
+    global gamestate
+    global cancheck
+    guildd=bot.get_guild(706761016041537539)
+    if gamestate!=5:
+        await ctx.send("It's not the right time.")
+        return
+    if cancheck==0:
+        await ctx.send("You cannot check.")
+        return
+    prath=data['power']['prez']
+    prez=discord.utils.get(guildd.members,id=int(prath))
+    if ctx.author.id!=prez.id:
+        await ctx.send("You are not the president.")
+        return
+    if str(user.id) not in data['players']:
+        await ctx.send("That person is not in the game.")
+        return
+    if data['players'][str(user.id)]['state']==0:
+        await ctx.send("The person you chose is currently dead.")
+        return
+    if prez.id==user.id:
+        await ctx.send("You cannot select yourselves.")
+        return
+    cancheck=0
+    await lobby.send("The president has chosen to check {}.".format(user.mention))
+    ath=str(user.id)
+    if data['players'][ath]['role']=="Libral":
+      say="Libral"
+    else:
+      say="Facist"
+    await ctx.author.send("The person you checked is of loyalty {}.".format(say))
+    dump()
+
+@bot.command()
+@commands.has_role("Players")
+async def passprez(ctx,user:discord.Member):
+    '''Use this to pass the presidentship to a person'''
+    global data
+    global gamestate
+    global canpass
+    guildd=bot.get_guild(706761016041537539)
+    if gamestate!=5:
+        await ctx.send("It's not the right time.")
+        return
+    if canpass==0:
+        await ctx.send("You cannot pass.")
+        return
+    prath=data['power']['prez']
+    prez=discord.utils.get(guildd.members,id=int(prath))
+    if ctx.author.id!=prez.id:
+        await ctx.send("You are not the president.")
+        return
+    if str(user.id) not in data['players']:
+        await ctx.send("That person is not in the game.")
+        return
+    if data['players'][str(user.id)]['state']==0:
+        await ctx.send("The person you chose is currently dead.")
+        return
+    if prez.id==user.id:
+        await ctx.send("You cannot select yourselves.")
+        return
+    await lobby.send("The president has chosen {} as the next president.".format(user.mention))
+    id=user.id
+    data['power']['prez']=str(id)
+    canpass=2
+    dump()
 
 async def fail():
     global data
@@ -769,7 +877,6 @@ async def fail():
         data['failcounter']=0 #move this down
         await winchecks()
     await lobby.send("You have 20 seconds to discuss before the next round starts.")
-    data['roundno']+=1
     await asyncio.sleep(20)
     await lobby.send("Time for next round!")
     await round()
@@ -779,7 +886,11 @@ async def winchecks():
     global gamestate
     global data
     global cankill
+    global cancheck
+    global canpass
     cankill=0
+    cancheck=0
+    canpass=0
     guildd=bot.get_guild(706761016041537539)
     if data['card']=="Liberal Policy":
         await lobby.send("A liberal law was passed!")
@@ -804,7 +915,27 @@ async def winchecks():
             await end("f")
             return
             dump()
+        elif data['faclaw']==1:
+          if data['board']==3:
+            await lobby.send("One facist law have been passed! The previous president can check the loyalty of a person in game")
+            user=data['power']['prez']
+            userr=discord.utils.get(guildd.members,id=int(user))
+            await userr.send("Use !check to check the person.")
+            cancheck=1
+        elif data['faclaw']==2:
+          if data['board']==3 or data['board']==2:
+            await lobby.send("Two facist laws have been passed! The previous president can check the loyalty of a person in game")
+            user=data['power']['prez']
+            userr=discord.utils.get(guildd.members,id=int(user))
+            await userr.send("Use !check to check the person.")
+            cancheck=1
         elif data['faclaw']==3:
+          if data['board']==1:
+            await lobby.send("Three facist law have been passed! The previous president can check the loyalty of a person in game")
+            user=data['power']['prez']
+            userr=discord.utils.get(guildd.members,id=int(user))
+            await userr.send("Use !check to check the person.")
+            cancheck=1
             await lobby.send("Three facist laws have been passed! The previous president has been shown the next three cards.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
@@ -814,6 +945,12 @@ async def winchecks():
             second = data['deck'][1]
             third = data['deck'][2]
             await userr.send("The next three cards in order are {} , {} and {}. You can do anything you want with this information BUT you are not allowed to copy paste this message.".format(first,second,third))
+          elif data['board']==2 or data['board']==3:
+            await lobby.send("Three facist laws have been passed! The previous president can choose the next president.")
+            user=data['power']['prez']
+            userr=discord.utils.get(guildd.members,id=int(user))
+            await userr.send("Use !passprez to pass the presidentship to a person.")
+            canpass=1
         elif data['faclaw']==4:
             await lobby.send("Four facist laws have been passed! The previous president has the power to kill someone.")
             user=data['power']['prez']
@@ -872,6 +1009,7 @@ async def end(who):
     data['power']={}
     data["card"]=""
     data['dekk']=[]
+    data['board']=0
     await lobby.send("Game has been reset")
     dump()
     
@@ -887,8 +1025,8 @@ async def drawdekk():
 async def board():
     board=discord.Embed(colour=discord.Colour.gold())
     board.set_author(name="The board currently looks like this!")
-    liblawn="Cards- "
-    faclawn="Cards- "
+    liblawn="Cards - "
+    faclawn="Cards - "
     failc="Count - "
     for a in range(data['liblaw']):
         liblawn+=":blue_square:"
@@ -897,7 +1035,18 @@ async def board():
     for a in range(data['failcounter']):
         failc+=":white_circle:"
     board.add_field(name="Liberal Laws- (5 needed to win)",value=liblawn,inline="false")
-    board.add_field(name="Facist laws- (6 needed to win,on 3rd you see the next 3 cards, on 4 you can kill, on 5 you can kill and veto is unlocked. After 3 ,if hitler is elected cancellor , facists win.",value=faclawn,inline="false")
+    board.add_field(name="Liberal Powers-",value=":black_circle::black_circle: :black_circle::black_circle::crown:",inline="false")
+    board.add_field(name="Facist laws- (6 needed to win)",value=faclawn,inline="false")
+    powers="Powers- "
+    if data['board']==1:
+      powers+=":black_circle::black_circle::eye::dagger::dagger::crown: "
+    elif data['board']==2:
+      powers+=":black_circle::mag::pen_ballpoint::dagger::dagger::crown: "
+    elif data['board']==3:
+      powers+=":mag::mag::pen_ballpoint::dagger::dagger::crown: "
+    else:
+      powers+=":black_circle::black_circle::eye::dagger::dagger::crown: "
+    board.add_field(name="Facist powers-",value=powers,inline="false")
     board.add_field(name="Fail counter- ",value=failc,inline="false")
     await lobby.send(embed=board)
 
