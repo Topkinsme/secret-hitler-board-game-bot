@@ -79,7 +79,7 @@ async def on_message(message):
 @bot.event
 async def on_member_join(member):
     await annchannel.send("{} has joined our server today! :tada: ".format(member.mention))
-    await member.send("Thank you for joining Topkin's Secret Hitler Mini-game discord server. We gladly welcome you here.:smile: \n\n Before you play , do read the rules and what you need to know before you play the game. \n\n Have fun! :tada:")
+    await member.send("Thank you for joining Topkin's Secret H1tl0r Mini-game discord server. We gladly welcome you here.:smile: \n Before you play , do read the rules and what you need to know before you play the game. \n Have fun! :tada:")
     
 @bot.event
 async def on_member_remove(member):
@@ -766,7 +766,7 @@ async def fail():
         elif nexkt=="Facist Policy":
             data['dekk'].remove('Facist Policy')
         data['card']=nexkt
-        data['failcounter']=0
+        data['failcounter']=0 #move this down
         await winchecks()
     await lobby.send("You have 20 seconds to discuss before the next round starts.")
     data['roundno']+=1
@@ -796,6 +796,7 @@ async def winchecks():
         await lobby.send("A facist law was passed!")
         data['dekk'].remove('Facist Policy')
         data['faclaw']+=1
+        #addchecks for fail counter
         if data['faclaw']>5:
             gamestate =6
             data['gamestate']=6
@@ -912,7 +913,7 @@ async def timeoutloop():
     if gamestate>0:
         timeoutloop.stop()
     if datetime.datetime.now()-starttime>timedelta(minutes=30):
-        await lobby.send("<@&706782757677826078>, the game has taken too long to start and calcelled. Type !j if you still want to play.")
+        await lobby.send("<@&706782757677826078>, the game has taken too long to start and cancelled. Type !j if you still want to play.")
         for ath in data['signedup']:
             guildd=bot.get_guild(706761016041537539)
             role = discord.utils.get(guildd.roles, name="Signed-Up")
