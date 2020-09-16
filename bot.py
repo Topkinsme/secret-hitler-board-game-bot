@@ -460,11 +460,11 @@ async def round():
         canpass=0
       else:
         try:
-            data['roundno']+=1
             ath=data['playerorder'][roundno]
             prez=discord.utils.get(guildd.members,id=int(ath))
             guildd=bot.get_guild(706761016041537539)
             data['power']['prez']=data['playerorder'][roundno]
+            data['roundno']+=1
         except:
             data['roundno']=0
             roundno=0
@@ -472,13 +472,14 @@ async def round():
             prez=discord.utils.get(guildd.members,id=int(ath))
             guildd=bot.get_guild(706761016041537539)
             data['power']['prez']=data['playerorder'][roundno]
+            data['roundno']+=1
     except:
         try:
-            data['roundno']+=1
             ath=data['playerorder'][roundno]
             prez=discord.utils.get(guildd.members,id=int(ath))
             guildd=bot.get_guild(706761016041537539)
             data['power']['prez']=data['playerorder'][roundno]
+            data['roundno']+=1
         except:
             data['roundno']=0
             roundno=0
@@ -486,6 +487,7 @@ async def round():
             prez=discord.utils.get(guildd.members,id=int(ath))
             guildd=bot.get_guild(706761016041537539)
             data['power']['prez']=data['playerorder'][roundno]
+            data['roundno']+=1
     await lobby.send("Your president is {}. Please nominate a person using !nominate.".format(prez.mention))
     dump()
 
@@ -733,11 +735,13 @@ async def picked():
             await asyncio.sleep(5)
         while canpass==1:
             await asyncio.sleep(5)
-        
-    await lobby.send("You have 20 seconds to discuss before the next round starts.")
-    await asyncio.sleep(20)
-    await lobby.send("Time for next round!")
-    await round()
+    if gamestate==6:
+      return
+    else:
+      await lobby.send("You have 20 seconds to discuss before the next round starts.")
+      await asyncio.sleep(20)
+      await lobby.send("Time for next round!")
+      await round()
     
     dump()
 
@@ -769,7 +773,6 @@ async def kill(ctx,user:discord.Member):
     if prez.id==user.id:
         await ctx.send("You cannot select yourselves.")
         return
-    cankill=0
     await lobby.send("The president has chosen {} to die.".format(user.mention))
     data['players'][str(user.id)]['state']=0
     data['playerorder'].remove(str(user.id))
@@ -786,6 +789,7 @@ async def kill(ctx,user:discord.Member):
         dump()
     else:
         await lobby.send("That person was not the secret hitler.")
+    cankill=0
     dump()
         
 @bot.command()
@@ -864,7 +868,6 @@ async def fail():
     global data
     await lobby.send("The government has failed!")
     data['failcounter']+=1
-    await board()
     if data['failcounter']>2:
         await lobby.send("The government has failed thrice.")
         nexkt=data['deck'][0]
@@ -874,8 +877,9 @@ async def fail():
         elif nexkt=="Facist Policy":
             data['dekk'].remove('Facist Policy')
         data['card']=nexkt
-        data['failcounter']=0 #move this down
         await winchecks()
+        data['failcounter']=0
+    await board()
     await lobby.send("You have 20 seconds to discuss before the next round starts.")
     await asyncio.sleep(20)
     await lobby.send("Time for next round!")
@@ -916,6 +920,8 @@ async def winchecks():
             return
             dump()
         elif data['faclaw']==1:
+          if data['failcounter']==3:
+            return
           if data['board']==3:
             await lobby.send("One facist law have been passed! The previous president can check the loyalty of a person in game")
             user=data['power']['prez']
@@ -923,6 +929,8 @@ async def winchecks():
             await userr.send("Use !check to check the person.")
             cancheck=1
         elif data['faclaw']==2:
+          if data['failcounter']==3:
+            return
           if data['board']==3 or data['board']==2:
             await lobby.send("Two facist laws have been passed! The previous president can check the loyalty of a person in game")
             user=data['power']['prez']
@@ -930,12 +938,9 @@ async def winchecks():
             await userr.send("Use !check to check the person.")
             cancheck=1
         elif data['faclaw']==3:
+          if data['failcounter']==3:
+            return
           if data['board']==1:
-            await lobby.send("Three facist law have been passed! The previous president can check the loyalty of a person in game")
-            user=data['power']['prez']
-            userr=discord.utils.get(guildd.members,id=int(user))
-            await userr.send("Use !check to check the person.")
-            cancheck=1
             await lobby.send("Three facist laws have been passed! The previous president has been shown the next three cards.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
@@ -952,12 +957,16 @@ async def winchecks():
             await userr.send("Use !passprez to pass the presidentship to a person.")
             canpass=1
         elif data['faclaw']==4:
+            if data['failcounter']==3:
+              return
             await lobby.send("Four facist laws have been passed! The previous president has the power to kill someone.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
             await userr.send("Use !kill to kill a person.")
             cankill=1
         elif data['faclaw']==5:
+            if data['failcounter']==3:
+              return
             await lobby.send("Five facist laws have been passed! The previous president has the power to kill someone. Veto power has been unlocked.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
@@ -1035,7 +1044,7 @@ async def board():
     for a in range(data['failcounter']):
         failc+=":white_circle:"
     board.add_field(name="Liberal Laws- (5 needed to win)",value=liblawn,inline="false")
-    board.add_field(name="Liberal Powers-",value=":black_circle::black_circle: :black_circle::black_circle::crown:",inline="false")
+    board.add_field(name="Liberal Powers-",value="Powers- :black_circle::black_circle: :black_circle::black_circle::crown:",inline="false")
     board.add_field(name="Facist laws- (6 needed to win)",value=faclawn,inline="false")
     powers="Powers- "
     if data['board']==1:
