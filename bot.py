@@ -254,8 +254,11 @@ async def signup(ctx):
             await ctx.send("Lobby at maximum capacity. Please try again later!")
             return
         if data['signedup']=={}:
+          try:
             starttime=datetime.datetime.now()
             timeoutloop.start()
+          except:
+            pass
         data['signedup'][ath] = 0
         guildd=bot.get_guild(706761016041537539)
         role = discord.utils.get(guildd.roles, name="Signed-Up")
@@ -272,7 +275,7 @@ async def signup(ctx):
 
         
 
-@bot.command(aliases=["slist"])
+@bot.command(aliases=["slist","sl"])
 async def signeduplist(ctx):
     msg = await ctx.send("Loading.")
     temp=""
@@ -310,7 +313,7 @@ async def vstart(ctx):
             elif data['signedup'][ath] ==0:
                 b+=1
         await ctx.send("{} out of {} people have voted to start the game.".format(a,a+b))
-        if a>b:
+        if a>b and gamestate==0:
             await lobby.send("A game is starting!")
             gamestate =1
             data['gamestate']=1
@@ -742,7 +745,6 @@ async def picked():
       await asyncio.sleep(20)
       await lobby.send("Time for next round!")
       await round()
-    
     dump()
 
 @bot.command()
@@ -879,7 +881,6 @@ async def fail():
         data['card']=nexkt
         await winchecks()
         data['failcounter']=0
-    await board()
     await lobby.send("You have 20 seconds to discuss before the next round starts.")
     await asyncio.sleep(20)
     await lobby.send("Time for next round!")
