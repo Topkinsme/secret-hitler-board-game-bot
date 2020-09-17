@@ -1030,6 +1030,7 @@ async def drawdekk():
     data['deck']=[]
     random.shuffle(data['dekk'])
     data['deck']=copy.deepcopy(data['dekk'])
+    await lobby.send("A new deck has been formed.")
     dump()
     
 async def board():
