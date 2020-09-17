@@ -204,6 +204,29 @@ async def compreset(ctx):
     await ctx.send("A complete erasure of all data has been done.")
     dump()
 
+@bot.command(aliases=["^","pro"])
+@commands.has_role("admin")
+async def promote(ctx):
+  '''To promote yourself. <Game Master>'''
+  guildd=bot.get_guild(448888674944548874)
+  role = discord.utils.get(guildd.roles, name="Game Master")
+  ath = str(ctx.author.id)
+  await ctx.author.add_roles(role)
+  role = discord.utils.get(guildd.roles, name="admin")
+  await ctx.author.remove_roles(role)
+  await ctx.send("You have been promoted , {}".format(ctx.author.mention))
+
+@bot.command(aliases=["v","dem"])
+@commands.has_role("Game Master")
+async def demote(ctx):
+  '''To promote yourself. <Game Master>'''
+  guildd=bot.get_guild(448888674944548874)
+  role = discord.utils.get(guildd.roles, name="admin")
+  ath = str(ctx.author.id)
+  await ctx.author.add_roles(role)
+  role = discord.utils.get(guildd.roles, name="Game Master")
+  await ctx.author.remove_roles(role)
+  await ctx.send("You have been demoted , {}".format(ctx.author.mention))
 
 #all
 @bot.command()
@@ -314,13 +337,22 @@ async def vstart(ctx):
                 b+=1
         await ctx.send("{} out of {} people have voted to start the game.".format(a,a+b))
         if a>b and gamestate==0:
-            await lobby.send("A game is starting!")
+            await lobby.send("A game is starting , <@&706782757677826078>!")
             gamestate =1
             data['gamestate']=1
             await start()
     else:
         await ctx.send("You are currently not playing. Type !signup to join the game.")
     dump()
+
+
+@bot.command(aliases=["t","so"])
+async def time(ctx):
+  try:
+    timeo = timedelta(minutes=30) -(datetime.datetime.now()-starttime)
+    await ctx.send("{} time left before the lobby is timed out".format(timeo))
+  except:
+    await ctx.send("Lobby empty or a game is going on. Or there was a error.")
 
 async def start():
     global data
