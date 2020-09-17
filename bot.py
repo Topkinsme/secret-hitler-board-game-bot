@@ -208,7 +208,7 @@ async def compreset(ctx):
 @commands.has_role("admin")
 async def promote(ctx):
   '''To promote yourself. <Game Master>'''
-  guildd=bot.get_guild(448888674944548874)
+  guildd=bot.get_guild(706761016041537539)
   role = discord.utils.get(guildd.roles, name="Game Master")
   ath = str(ctx.author.id)
   await ctx.author.add_roles(role)
@@ -220,7 +220,7 @@ async def promote(ctx):
 @commands.has_role("Game Master")
 async def demote(ctx):
   '''To promote yourself. <Game Master>'''
-  guildd=bot.get_guild(448888674944548874)
+  guildd=bot.get_guild(706761016041537539)
   role = discord.utils.get(guildd.roles, name="admin")
   ath = str(ctx.author.id)
   await ctx.author.add_roles(role)
