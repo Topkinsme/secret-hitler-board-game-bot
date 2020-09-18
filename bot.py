@@ -594,10 +594,10 @@ async def nominate(ctx,user:discord.Member):
     print(ja,nein)
     dump()
     if ja>nein:
-        await lobby.send("{} has been elected as your cancellor!".format(user.mention))
+        await lobby.send("{} has been elected as your chancellor!".format(user.mention))
         data['power']['chan']=str(user.id)
         if data['faclaw']>2 and data['players'][str(user.id)]['role']=="Hitler":
-            await lobby.send("The game is now over! Hitler has become the cancellor!")
+            await lobby.send("The game is now over! Hitler has become the chancellor!")
             await end("f")
             dump()
             return
@@ -722,7 +722,7 @@ async def legis():
                 ja+=reaction.count
             elif str(reaction)==no:
                 nein+=reaction.count
-        await user.send("Alright.")
+        await userr.send("Alright.")
         if ja>nein:
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
@@ -777,6 +777,7 @@ async def picked():
             await asyncio.sleep(5)
         while canpass==1:
             await asyncio.sleep(5)
+    await asyncio.sleep(5)
     if gamestate==6:
       return
     else:
@@ -816,6 +817,9 @@ async def kill(ctx,user:discord.Member):
         return
     await lobby.send("The president has chosen {} to die.".format(user.mention))
     data['players'][str(user.id)]['state']=0
+    num = data['playerorder'].index(str(user.id))
+    if num<data['roundno']:
+      data['roundno']-=1
     data['playerorder'].remove(str(user.id))
     role = discord.utils.get(guildd.roles, name="Players")
     await user.remove_roles(role)
@@ -1067,7 +1071,9 @@ async def drawdekk():
     print(data['deck'])
     print(data['dekk'])
     data['deck']=[]
-    random.shuffle(data['dekk'])
+    num = random.randint(1, 15)
+    for a in range(num):
+      random.shuffle(data['dekk'])
     data['deck']=copy.deepcopy(data['dekk'])
     await lobby.send("A new deck has been formed.")
     dump()
@@ -1165,7 +1171,7 @@ async def cards(ctx):
     nboard=0
   else:
     ndeck=len(data['deck'])
-    nboard=len(data['liblaw'])+len(data['faclaw'])
+    nboard=data['liblaw']+data['faclaw']
     ndiscard= 17 -(ndeck+nboard)
   await ctx.send("`{}` cards are in the pile , `{}` on the board and `{}` in the discard pile.".format(ndeck,nboard,ndiscard))
 
