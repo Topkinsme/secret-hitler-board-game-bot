@@ -65,6 +65,10 @@ async def on_ready():
         data['failcounter']=0
         data['dekk']=[]
         data['board']=0
+    if len(data['signedup'])>0 and gamestate==0:
+        starttime=datetime.datetime.now()
+        timeoutloop.start()
+
         
 
         
@@ -348,6 +352,9 @@ async def vstart(ctx):
 
 @bot.command(aliases=["t","so"])
 async def time(ctx):
+  if len(data['signedup'])==0:
+    await ctx.send("Lobby Empty.")
+    return
   try:
     timeo = timedelta(minutes=30) -(datetime.datetime.now()-starttime)
     await ctx.send("{} time left before the lobby is timed out".format(timeo))
@@ -587,7 +594,7 @@ async def nominate(ctx,user:discord.Member):
     print(ja,nein)
     dump()
     if ja>nein:
-        await lobby.send("{} has been elected as your cancellor!".format(user.name))
+        await lobby.send("{} has been elected as your cancellor!".format(user.mention))
         data['power']['chan']=str(user.id)
         if data['faclaw']>2 and data['players'][str(user.id)]['role']=="Hitler":
             await lobby.send("The game is now over! Hitler has become the cancellor!")
