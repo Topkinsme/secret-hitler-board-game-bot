@@ -1157,6 +1157,20 @@ async def playerorder(ctx):
         a+=1
     await msg.edit(content=temp)
 
+@bot.command()
+async def cards(ctx):
+  if gamestate<1:
+    ndeck=17
+    ndiscard=0
+    nboard=0
+  else:
+    ndeck=len(data['deck'])
+    nboard=len(data['liblaw'])+len(data['faclaw'])
+    ndiscard= 17 -(ndeck+nboard)
+  await ctx.send("`{}` cards are in the pile , `{}` on the board and `{}` in the discard pile.".format(ndeck,nboard,ndiscard))
+
+
+
 def dump():
     my_collection = db.main
     my_collection.drop()
