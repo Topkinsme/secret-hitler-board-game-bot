@@ -65,6 +65,8 @@ async def on_ready():
         data['failcounter']=0
         data['dekk']=[]
         data['board']=0
+        data['notiflist']=[]
+        await annchannel.send("The notif list has been erased!!!")
     if len(data['signedup'])>0 and gamestate==0:
         starttime=datetime.datetime.now()
         timeoutloop.start()
@@ -205,6 +207,7 @@ async def compreset(ctx):
     data["card"]=""
     data['dekk']=[]
     data['board']=0
+    data['notiflist']=[]
     await ctx.send("A complete erasure of all data has been done.")
     dump()
 
@@ -245,22 +248,32 @@ async def ping(ctx):
 @bot.command(aliases=["notif"])
 async def notifyme(ctx):
     '''Use this to get or remove the notify role from yourself'''
+    global data
     guildd=bot.get_guild(706761016041537539)
-    role = discord.utils.get(guildd.roles, name="notify")
-    if role in ctx.author.roles:
-        await ctx.author.remove_roles(role)
-        await ctx.send("You will now not be notified when future games occur.")
-    else:
-        await ctx.author.add_roles(role)
+    ath=str(ctx.author.id)
+    if ath not in data['notiflist']:
+        data['notiflist'].append(ath)
         await ctx.send("You will now be notified when future games occur.")
+    else:
+        data['notiflist'].remove(ath)
+        await ctx.send("You will now not be notified when future games occur.")
+    dump()
 
 @bot.command()
 async def notify(ctx):
     '''Use this to ping people who might be willing to play'''
     global lastping
+    global data
+    guildd=bot.get_guild(706761016041537539)
     if lastping==None or datetime.datetime.now()-lastping>timedelta(minutes=30):
         lastping=datetime.datetime.now()
-        await ctx.send("<@&706855589883674744> , A game might start soon. Type !signup if you'd like to play.")
+        msg= "{} is pinging! ".format(ctx.author.mention)
+        for ath in data['notiflist']:
+          userr=discord.utils.get(guildd.members,id=int(ath))
+          status=str(userr.status)
+          if status=="online" or status=="idle":
+              msg+="<@{}> ".format(ath)
+        await ctx.send(msg)
     else:
         await ctx.send("Please wait {} longer. The last ping was on {}.".format(timedelta(minutes=30)-(datetime.datetime.now()-lastping),lastping))
     dump()
