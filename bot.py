@@ -34,6 +34,7 @@ async def on_ready():
     global data
     global lastping
     global gamestate
+    global starttime
     lobby = bot.get_channel(754034408410972181)
     annchannel = bot.get_channel(706771948708823050)
     await lobby.send("Who's up for a game?! :smiley:")
@@ -191,7 +192,6 @@ async def compreset(ctx):
     '''Complete reset. <Game master>'''
     global data
     global gamestate
-    data = {}
     data['signedup']={}
     data['players']={}
     data['gamestate']=0
@@ -207,7 +207,6 @@ async def compreset(ctx):
     data["card"]=""
     data['dekk']=[]
     data['board']=0
-    data['notiflist']=[]
     await ctx.send("A complete erasure of all data has been done.")
     dump()
 
@@ -243,7 +242,33 @@ async def ping(ctx):
     await ctx.send("Pong!")
     dump()
 
+@bot.command()
+async def table(ctx):
+  await ctx.send("""__**Table-**__
 
+**Role Distribution-**
+
+Players   |     5    |     6    |     7    |     8    |     9     |   10
+─────────────────────────────
+Liberals  |     3    |     4    |     4    |     5    |     6    |     6
+─────────────────────────────
+Fascists  |  1+H  |  1+H  |  2+H  |  2+H  |  3+H  |  3+H
+
+**Boards-**
+
+Liberal Board - :black_circle::black_circle: :black_circle::black_circle::crown:
+
+Fascist Board if 5-6 players -  :black_circle::black_circle::eye::dagger::dagger::crown:
+Fascist Board if 7-8 players - :black_circle::mag::pen_ballpoint::dagger::dagger::crown:
+Fascist Board if 9-10 players - :mag::mag::pen_ballpoint::dagger::dagger::crown:
+
+**Powers-**
+
+:eye:  - Allows the current president to look at the next three cards in order.
+:mag:  - Allows the current president to look at the loyalty of a person. (Note that this will only tell the team, not the role.) 
+:pen_ballpoint:  - Allows the current president to choose the next president.
+:dagger:  - Allows the current president to kill a person from game.
+:crown:  - Victory.""")
     
 @bot.command(aliases=["notif"])
 async def notifyme(ctx):
@@ -260,6 +285,7 @@ async def notifyme(ctx):
     dump()
 
 @bot.command()
+@commands.has_role("Signed-Up")
 async def notify(ctx):
     '''Use this to ping people who might be willing to play'''
     global lastping
@@ -271,7 +297,7 @@ async def notify(ctx):
         for ath in data['notiflist']:
           userr=discord.utils.get(guildd.members,id=int(ath))
           status=str(userr.status)
-          if status=="online" or status=="idle":
+          if status=="online" or status=="idle" or status=="dnd":
               msg+="<@{}> ".format(ath)
         await ctx.send(msg)
     else:
@@ -317,6 +343,7 @@ async def signup(ctx):
 
 @bot.command(aliases=["slist","sl"])
 async def signeduplist(ctx):
+    '''Tells you the number of people that have signed up'''
     msg = await ctx.send("Loading.")
     temp=""
     a=0
@@ -326,7 +353,7 @@ async def signeduplist(ctx):
     temp+="The number of people who have signed up is- {}".format(a)
     await msg.edit(content=temp)
 
-@bot.command()
+@bot.command(aliases=["vs"])
 @commands.has_role("Signed-Up")
 async def vstart(ctx):
     '''Vote to start the game <Signedup>'''
@@ -365,6 +392,7 @@ async def vstart(ctx):
 
 @bot.command(aliases=["t","so"])
 async def time(ctx):
+  '''Tells you how much time is left before the lobby expires.'''
   if len(data['signedup'])==0:
     await ctx.send("Lobby Empty.")
     return
@@ -444,6 +472,7 @@ async def start():
         role= random.choice(rolelist)
         rolelist.remove(role)
         data['players'][user]['role']=role
+        data['players'][ath]['checked']=0
         data['players'][user]['state']=1
         if data['players'][user]['role']=="Hitler":
             userr=discord.utils.get(guildd.members,id=int(user))
@@ -878,7 +907,11 @@ async def check(ctx,user:discord.Member):
     if prez.id==user.id:
         await ctx.send("You cannot select yourselves.")
         return
+    if data['players'][str(user.id)]['checked']==1:
+        await ctx.send("That person has already been checked.")
+        return
     cancheck=0
+    data['players'][ath]['checked']=1
     await lobby.send("The president has chosen to check {}.".format(user.mention))
     ath=str(user.id)
     if data['players'][ath]['role']=="Libral":
@@ -916,7 +949,7 @@ async def passprez(ctx,user:discord.Member):
     if prez.id==user.id:
         await ctx.send("You cannot select yourselves.")
         return
-    await lobby.send("The president has chosen {} as the next president.".format(user.mention))
+    await lobby.send("The president has chosen {} as the next president. Please wait a few seconds and the next round will start.".format(user.mention))
     id=user.id
     data['power']['prez']=str(id)
     canpass=2
@@ -937,6 +970,7 @@ async def fail():
         data['card']=nexkt
         await winchecks()
         data['failcounter']=0
+    await board()
     await lobby.send("You have 20 seconds to discuss before the next round starts.")
     await asyncio.sleep(20)
     await lobby.send("Time for next round!")
@@ -1011,7 +1045,7 @@ async def winchecks():
             await lobby.send("Three facist laws have been passed! The previous president can choose the next president.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
-            await userr.send("Use !passprez to pass the presidentship to a person.")
+            await userr.send("Use !passprez to pass the presidency to a person.")
             canpass=1
         elif data['faclaw']==4:
             if data['failcounter']==3:
@@ -1061,7 +1095,6 @@ async def end(who):
     await chnl.set_permissions(guildd.default_role,read_messages=True,send_messages=True)
     chnl=discord.utils.get(guildd.channels,name="lobby")
     await chnl.set_permissions(role1,read_messages=True,send_messages=True)
-    data = {}
     data['signedup']={}
     data['players']={}
     data['gamestate']=0
@@ -1178,6 +1211,7 @@ async def playerorder(ctx):
 
 @bot.command()
 async def cards(ctx):
+  '''Tells you the number of cards you can see.'''
   if gamestate<1:
     ndeck=17
     ndiscard=0
