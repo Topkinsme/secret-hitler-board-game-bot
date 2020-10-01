@@ -20,16 +20,17 @@ import keep_alive
 token = str(os.environ.get("tokeno"))
 dbpass=str(os.environ.get("dbpass"))
 
+intents = discord.Intents.default()
+intents.members = True
+intents.presences = True
 
-bot = commands.Bot(command_prefix = "!")
+
+bot = commands.Bot(command_prefix = "!",intents=intents)
 #bot.remove_command('help')
 client = pymongo.MongoClient("mongodb+srv://Topkinsme:"+dbpass+"@top-cluster.x2y8s.mongodb.net/<dbname>?retryWrites=true&w=majority")
 db = client.shbot
 logging.basicConfig(level=logging.INFO)
 
-intents = discord.Intents()
-intents.members = True
-intents.presences = True
 
 @bot.event
 async def on_ready():
