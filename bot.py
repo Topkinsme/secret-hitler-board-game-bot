@@ -97,7 +97,7 @@ async def on_message(message):
     '''if message.channel.id!=754034408410972181:
         return'''
     ath=str(message.author.id)
-    if ath not in userd:
+    if ath not in userd['users']:
       makeacc(ath)
     await bot.process_commands(message)   
     
@@ -107,6 +107,7 @@ async def on_member_join(member):
     await peochannel.send("{} has joined our server today! :tada: ".format(member.mention))
     await annchannel.send("{} has joined our server today! :tada: ".format(member.mention))
     await member.send("Thank you for joining Topkin's Secret H1tl0r Mini-game discord server. We gladly welcome you here.:smile: \n Before you play , do read the rules and what you need to know before you play the game. \n Have fun! :tada:")
+
     
 @bot.event
 async def on_member_remove(member):
@@ -326,6 +327,8 @@ async def notifyme(ctx):
     global userd
     guildd=bot.get_guild(706761016041537539)
     ath=str(ctx.author.id)
+    if ath not in userd['users']:
+      makeacc(ath)
     if userd['users'][ath]['notif']==0:
         userd['users'][ath]['notif']=1
         await ctx.send("You will now be notified when future games occur.")
@@ -365,7 +368,7 @@ async def profile(ctx,user:discord.User=None):
     url=user.avatar_url
     name=user.name
     user=str(user.id)
-    if user not in userd:
+    if user not in userd['users']:
       makeacc(user)
     profile=discord.Embed(colour=discord.Colour.teal())
     profile.set_author(name="Profile-")
@@ -916,7 +919,7 @@ async def picked():
         while canpass==1:
             await asyncio.sleep(5)
     await asyncio.sleep(5)
-    if gamestate==6:
+    if gamestate!=5:
       return
     else:
       await lobby.send("You have 20 seconds to discuss before the next round starts.")
@@ -1249,7 +1252,10 @@ async def end(who):
         if len(name)>25:
           name=name[:25]
         name+=" [{}/{}]".format(userd['users'][ath]['won'],userd['users'][ath]['games'])
-        await userr.edit(nick=name)
+        try:
+          await userr.edit(nick=name)
+        except:
+          pass
     chnl=discord.utils.get(guildd.channels,name="lobby")
     await chnl.set_permissions(guildd.default_role,read_messages=True,send_messages=True)
     chnl=discord.utils.get(guildd.channels,name="lobby")
