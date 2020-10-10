@@ -39,6 +39,7 @@ async def on_ready():
     global peochannel
     global lobby
     global data
+    global userd
     global lastping
     global gamestate
     global starttime
@@ -50,7 +51,9 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game(name="Secret Hitler!", type=1))
     try:
         my_collection = db.main
+        my_collection_t = db.user
         data = my_collection.find_one()
+        userd=my_collection_t.find_one()
         gamestate = data['gamestate']
         '''with open('data.json','r') as f:
             data = json.load(f)
@@ -75,8 +78,9 @@ async def on_ready():
         data['failcounter']=0
         data['dekk']=[]
         data['board']=0
-        data['notiflist']=[]
         data['logz']=[]
+        userd={}
+        userd['users']={}
         await annchannel.send("The notif list has been erased!!!")
     if len(data['signedup'])>0 and gamestate==0:
         starttime=datetime.datetime.now()
@@ -87,10 +91,14 @@ async def on_ready():
         
 @bot.event
 async def on_message(message): 
+    global userd
     if message.author.id == 706771257256968243:
         return
     '''if message.channel.id!=754034408410972181:
         return'''
+    ath=str(message.author.id)
+    if ath not in userd:
+      makeacc(ath)
     await bot.process_commands(message)   
     
   
@@ -129,6 +137,20 @@ async def on_message_delete(message):
       return
     await annchannel.send("{}'s message `{}` was deleted in <#{}>".format(message.author.name,message.content,message.channel.id))
 
+@bot.event
+async def on_user_update(before,after):
+    global userd
+    if before.name==after.name:
+        return
+    else:
+        await annchannel.send("'{}' has changed thier name to '{}' .".format(before.name,after.name))
+        ath=str(after.id)
+        try:
+          userd['users'][ath]['name']=after.name
+        except:
+          pass
+
+
 
 #Game Master
 
@@ -139,6 +161,13 @@ async def pdata(ctx):
     '''Send the complete data file. <Game master>'''
     print(data)
     await ctx.send(data)
+
+@bot.command()
+@commands.has_role("Game Master")
+async def puserd(ctx):
+    '''Send the complete data file. <Game master>'''
+    print(userd)
+    await ctx.send(userd)
 
 @bot.command(hidden=True)
 @commands.has_role("Game Master")
@@ -210,6 +239,7 @@ async def compreset(ctx):
     '''Complete reset. <Game master>'''
     global data
     global gamestate
+    data={}
     data['signedup']={}
     data['players']={}
     data['gamestate']=0
@@ -293,13 +323,14 @@ Fascist Board if 9-10 players - :mag::mag::pen_ballpoint::dagger::dagger::crown:
 async def notifyme(ctx):
     '''Use this to get or remove the notify role from yourself'''
     global data
+    global userd
     guildd=bot.get_guild(706761016041537539)
     ath=str(ctx.author.id)
-    if ath not in data['notiflist']:
-        data['notiflist'].append(ath)
+    if userd['users'][ath]['notif']==0:
+        userd['users'][ath]['notif']=1
         await ctx.send("You will now be notified when future games occur.")
     else:
-        data['notiflist'].remove(ath)
+        userd['users'][ath]['notif']=0
         await ctx.send("You will now not be notified when future games occur.")
     dump()
 
@@ -309,20 +340,47 @@ async def notify(ctx):
     '''Use this to ping people who might be willing to play'''
     global lastping
     global data
+    global userd
     guildd=bot.get_guild(706761016041537539)
     if lastping==None or datetime.datetime.now()-lastping>timedelta(minutes=30):
         lastping=datetime.datetime.now()
         msg= "{} is pinging! ".format(ctx.author.mention)
-        for ath in data['notiflist']:
-          userr=discord.utils.get(guildd.members,id=int(ath))
-          status=str(userr.status)
-          if status=="online" or status=="idle" or status=="dnd":
-              msg+="<@{}> ".format(ath)
+        for ath in userd['users']:
+          if userd['users'][ath]['notif']==1:
+            if ath not in data['signedup']:
+              userr=discord.utils.get(guildd.members,id=int(ath))
+              status=str(userr.status)
+              if status=="online" or status=="idle" or status=="dnd":
+                  msg+="<@{}> ".format(ath)
         await ctx.send(msg)
     else:
         await ctx.send("Please wait {} longer. The last ping was on {}.".format(timedelta(minutes=30)-(datetime.datetime.now()-lastping),lastping))
     dump()
-    
+
+@bot.command()
+async def profile(ctx,user:discord.User=None):
+    '''Use this to view someone's profile.'''
+    if user == None:
+      user=ctx.author
+    url=user.avatar_url
+    name=user.name
+    user=str(user.id)
+    if user not in userd:
+      makeacc(user)
+    profile=discord.Embed(colour=discord.Colour.teal())
+    profile.set_author(name="Profile-")
+    profile.set_thumbnail(url=url)
+    profile.add_field(name="Username",value="{}".format(name))
+    profile.add_field(name="Games won to Games played",value="{}/{}".format(userd['users'][user]['won'],userd['users'][user]['games']))
+    profile.add_field(name="Roles",value="Times as lib - {} \nTimes as Fac - {} \nTimes as Hit - {}".format(userd['users'][user]['tlib'],userd['users'][user]['tfac'],userd['users'][user]['thit']))
+    profile.add_field(name="Wins",value="Wins as lib - {} \nWins as Fac - {} \nWins by enacting 5 lib policies - {} \nWins by enacting 6 fac policies - {} \nWins by electing Hit - {} \nWins by assasinating Hit - {}".format(userd['users'][user]['wonl'],userd['users'][user]['wonf'],userd['users'][user]['wonle'],userd['users'][user]['wonfe'],userd['users'][user]['wonfhe'],userd['users'][user]['wonlk']))
+    if userd['users'][user]['notif']==0:
+      text="0 - Notifications Off"
+    elif userd['users'][user]['notif']==1:
+      text="1 - Notifications On"
+    profile.add_field(name="Notify Mode-",value=text)
+    await ctx.send(embed=profile)
+
     
 @bot.command(aliases=["j","join"])
 async def signup(ctx):
@@ -478,7 +536,7 @@ async def start():
     for a in range(libn):
         roles.append("Liberal")
     for a in range(facn):
-        roles.append("Facist")
+        roles.append("Fascist")
     roles.append("Hitler")
     for player in data['players']:
         listoplayers.append(player)
@@ -502,7 +560,7 @@ async def start():
         if data['players'][user]['role']=="Hitler":
             userr=discord.utils.get(guildd.members,id=int(user))
             hitler=userr.name
-        elif data['players'][user]['role']=="Facist":
+        elif data['players'][user]['role']=="Fascist":
             userr=discord.utils.get(guildd.members,id=int(user))
             facs.append(userr.name)
         #state 1 is alive ,0 is dead
@@ -523,7 +581,7 @@ async def start():
                 for person in facs:
                     people += person + " "
                 a="Your team consists of "+people
-        elif data['players'][ath]['role']=="Facist":
+        elif data['players'][ath]['role']=="Fascist":
                 a = "Your leader is "+hitler
                 people = ""
                 for person in facs:
@@ -539,7 +597,7 @@ async def start():
         players.append(str(userr.id))
         data['logz'].append("{} had the role {}".format(userr.mention,data['players'][ath]['role']))
     print(players)
-    data['dekk']=['Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy','Facist Policy']
+    data['dekk']=['Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy']
     await drawdekk()
     random.shuffle(players)
     data['playerorder']=players
@@ -671,7 +729,7 @@ async def nominate(ctx,user:discord.Member):
         if data['faclaw']>2 and data['players'][str(user.id)]['role']=="Hitler":
             await lobby.send("The game is now over! Hitler has become the chancellor!")
             data['logz'].append("**GAME OVER - HITLER WAS ELECTED!**")
-            await end("f")
+            await end("fhe")
             dump()
             return
         await legis()
@@ -911,7 +969,7 @@ async def kill(ctx,user:discord.Member):
         data['gamestate']=6
         await lobby.send("Congrats! The liberals have won! They have eliminated hitler!")
         data['logz'].append("**GAME OVER - HITLER HAS BEEN KILLED.**")
-        await end("l")
+        await end("lk")
         return
         dump()
     else:
@@ -958,7 +1016,7 @@ async def check(ctx,user:discord.Member):
     if data['players'][ath]['role']=="Libral":
       say="Libral"
     else:
-      say="Facist"
+      say="Fascist"
     await ctx.author.send("The person you checked is of loyalty {}.".format(say))
     dump()
 
@@ -1004,13 +1062,13 @@ async def fail():
     if data['failcounter']>2:
         await lobby.send("The government has failed thrice.")
         data['logz'].append("The government had failed thrice.")
-        data['logz'].append("There are {} Liberal policies and {} Facist policies.".format(data['liblaw'],data['faclaw']))
+        data['logz'].append("There are {} Liberal policies and {} Fascist policies.".format(data['liblaw'],data['faclaw']))
         nexkt=data['deck'][0]
         data['deck'].pop(0)
         if nexkt=="Liberal Policy":
             data['dekk'].remove('Liberal Policy')
-        elif nexkt=="Facist Policy":
-            data['dekk'].remove('Facist Policy')
+        elif nexkt=="Fascist Policy":
+            data['dekk'].remove('Fascist Policy')
         data['card']=nexkt
         await winchecks()
         data['failcounter']=0
@@ -1040,27 +1098,27 @@ async def winchecks():
             data['gamestate']=6
             await lobby.send("Congrats! The liberals have won!")
             data['logz'].append("**GAME OVER - Liberals have passed 5 policies.**")
-            await end("l")
+            await end("le")
             return
             dump()
-    elif data['card']=="Facist Policy":
-        await lobby.send("A facist law was passed!")
-        data['dekk'].remove('Facist Policy')
+    elif data['card']=="Fascist Policy":
+        await lobby.send("A Fascist law was passed!")
+        data['dekk'].remove('Fascist Policy')
         data['faclaw']+=1
         #addchecks for fail counter
         if data['faclaw']>5:
             gamestate =6
             data['gamestate']=6
-            await lobby.send("Congrats! The facists have won!")
-            data['logz'].append("**GAME OVER - Facists have passed 6 policies.**")
-            await end("f")
+            await lobby.send("Congrats! The Fascists have won!")
+            data['logz'].append("**GAME OVER - Fascists have passed 6 policies.**")
+            await end("fe")
             return
             dump()
         elif data['faclaw']==1:
           if data['failcounter']==3:
             return
           if data['board']==3:
-            await lobby.send("One facist law have been passed! The previous president can check the loyalty of a person in game")
+            await lobby.send("One Fascist law have been passed! The previous president can check the loyalty of a person in game")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
             await userr.send("Use !check to check the person.")
@@ -1069,7 +1127,7 @@ async def winchecks():
           if data['failcounter']==3:
             return
           if data['board']==3 or data['board']==2:
-            await lobby.send("Two facist laws have been passed! The previous president can check the loyalty of a person in game")
+            await lobby.send("Two Fascist laws have been passed! The previous president can check the loyalty of a person in game")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
             await userr.send("Use !check to check the person.")
@@ -1078,7 +1136,7 @@ async def winchecks():
           if data['failcounter']==3:
             return
           if data['board']==1:
-            await lobby.send("Three facist laws have been passed! The previous president has been shown the next three cards.")
+            await lobby.send("Three Fascist laws have been passed! The previous president has been shown the next three cards.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
             if len(data['deck'])<3:
@@ -1088,7 +1146,7 @@ async def winchecks():
             third = data['deck'][2]
             await userr.send("The next three cards in order are {} , {} and {}. You can do anything you want with this information BUT you are not allowed to copy paste this message.".format(first,second,third))
           elif data['board']==2 or data['board']==3:
-            await lobby.send("Three facist laws have been passed! The previous president can choose the next president.")
+            await lobby.send("Three Fascist laws have been passed! The previous president can choose the next president.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
             await userr.send("Use !passprez to pass the presidency to a person.")
@@ -1096,7 +1154,7 @@ async def winchecks():
         elif data['faclaw']==4:
             if data['failcounter']==3:
               return
-            await lobby.send("Four facist laws have been passed! The previous president has the power to kill someone.")
+            await lobby.send("Four Fascist laws have been passed! The previous president has the power to kill someone.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
             await userr.send("Use !kill to kill a person.")
@@ -1104,32 +1162,68 @@ async def winchecks():
         elif data['faclaw']==5:
             if data['failcounter']==3:
               return
-            await lobby.send("Five facist laws have been passed! The previous president has the power to kill someone. Veto power has been unlocked.")
+            await lobby.send("Five Fascist laws have been passed! The previous president has the power to kill someone. Veto power has been unlocked.")
             user=data['power']['prez']
             userr=discord.utils.get(guildd.members,id=int(user))
             await userr.send("Use !kill to kill a person.")
             cankill=1
     await board()
-    data['logz'].append("There are {} Liberal policies and {} Facist policies.".format(data['liblaw'],data['faclaw']))
+    data['logz'].append("There are {} Liberal policies and {} Fascist policies.".format(data['liblaw'],data['faclaw']))
     dump()
-            
+
 async def end(who):
     global data
+    global userd
     global gamestate
     win="The winners are-\n"
     lose="The people who didn't win are-\n"
-    if who=="l":
+    if who=="le":
         for ath in data['players']:
+            userd['users'][ath]['games']+=1
             if data['players'][ath]['role']=="Liberal":
                 win+="<@{}>\n".format(ath)
+                userd['users'][ath]['won']+=1
+                userd['users'][ath]['wonl']+=1
+                userd['users'][ath]['wonle']+=1
             else:
                 lose+="<@{}>\n".format(ath)
-    elif who=="f":
+    elif who=="fe":
         for ath in data['players']:
+            userd['users'][ath]['games']+=1
             if data['players'][ath]['role']=="Liberal":
                 lose+="<@{}>\n".format(ath)
             else:
                 win+="<@{}>\n".format(ath)
+                userd['users'][ath]['won']+=1
+                userd['users'][ath]['wonf']+=1
+                userd['users'][ath]['wonfe']+=1
+    elif who=="lk":
+        for ath in data['players']:
+            userd['users'][ath]['games']+=1
+            if data['players'][ath]['role']=="Liberal":
+                win+="<@{}>\n".format(ath)
+                userd['users'][ath]['won']+=1
+                userd['users'][ath]['wonl']+=1
+                userd['users'][ath]['wonlk']+=1
+            else:
+                lose+="<@{}>\n".format(ath)
+    elif who=="fhe":
+        for ath in data['players']:
+            userd['users'][ath]['games']+=1
+            if data['players'][ath]['role']=="Liberal":
+                lose+="<@{}>\n".format(ath)
+            else:
+                win+="<@{}>\n".format(ath)
+                userd['users'][ath]['won']+=1
+                userd['users'][ath]['wonf']+=1
+                userd['users'][ath]['wonfhe']+=1
+    for ath in data['players']:
+      if data['players'][ath]['role']=="Liberal":
+        userd['users'][ath]['tlib']+=1
+      elif data['players'][ath]['role']=="Fascist":
+        userd['users'][ath]['tfac']+=1
+      elif data['players'][ath]['role']=="Hitler": 
+        userd['users'][ath]['thit']+=1
     await lobby.send("{} \n\n {}".format(win,lose))
     await annchannel.send("{} \n\n {}".format(win,lose))
     log="-\nThe game went like this-\n\n"
@@ -1140,7 +1234,7 @@ async def end(who):
       await lobby.send(log[:2000])
       await annchannel.send(log[:2000])
       await lobby.send(log[2000:])
-      await annchannel.send(log[:2000])
+      await annchannel.send(log[2000:])
     else:
       await lobby.send(log)
       await annchannel.send(log)
@@ -1151,10 +1245,16 @@ async def end(who):
         userr=discord.utils.get(guildd.members,id=int(ath))
         await userr.remove_roles(role1)
         await userr.remove_roles(role2)
+        name = userr.name
+        if len(name)>25:
+          name=name[:25]
+        name+=" [{}/{}]".format(userd['users'][ath]['won'],userd['users'][ath]['games'])
+        await userr.edit(nick=name)
     chnl=discord.utils.get(guildd.channels,name="lobby")
     await chnl.set_permissions(guildd.default_role,read_messages=True,send_messages=True)
     chnl=discord.utils.get(guildd.channels,name="lobby")
     await chnl.set_permissions(role1,read_messages=True,send_messages=True)
+    data={}
     data['signedup']={}
     data['players']={}
     data['gamestate']=0
@@ -1205,7 +1305,7 @@ async def board():
         failc+=":white_circle:"
     board.add_field(name="Liberal Laws- (5 needed to win)",value=liblawn,inline="false")
     board.add_field(name="Liberal Powers-",value="Powers- :black_circle::black_circle: :black_circle::black_circle::crown:",inline="false")
-    board.add_field(name="Facist laws- (6 needed to win)",value=faclawn,inline="false")
+    board.add_field(name="Fascist laws- (6 needed to win)",value=faclawn,inline="false")
     powers="Powers- "
     if data['board']==1:
       powers+=":black_circle::black_circle::eye::dagger::dagger::crown: "
@@ -1215,7 +1315,7 @@ async def board():
       powers+=":mag::mag::pen_ballpoint::dagger::dagger::crown: "
     else:
       powers+=":black_circle::black_circle::eye::dagger::dagger::crown: "
-    board.add_field(name="Facist powers-",value=powers,inline="false")
+    board.add_field(name="Fascist powers-",value=powers,inline="false")
     board.add_field(name="Fail counter- ",value=failc,inline="false")
     await lobby.send(embed=board)
 
@@ -1289,12 +1389,33 @@ async def cards(ctx):
     ndiscard= 17 -(ndeck+nboard)
   await ctx.send("`{}` cards are in the pile , `{}` on the board and `{}` in the discard pile.".format(ndeck,nboard,ndiscard))
 
-
+def makeacc(ath):
+      global userd
+      userd['users'][ath]={}
+      guildd=bot.get_guild(706761016041537539)
+      userr=discord.utils.get(guildd.members,id=int(ath))
+      userd['users'][ath]['name'] = userr.name
+      userd['users'][ath]['tlib'] = 0
+      userd['users'][ath]['tfac']= 0 
+      userd['users'][ath]['thit']= 0
+      userd['users'][ath]['games']= 0
+      userd['users'][ath]['won']= 0
+      userd['users'][ath]['wonl']= 0
+      userd['users'][ath]['wonf']= 0
+      userd['users'][ath]['wonle']= 0
+      userd['users'][ath]['wonlk']= 0
+      userd['users'][ath]['wonfe']= 0
+      userd['users'][ath]['wonfhe']= 0
+      userd['users'][ath]['notif']=0
+      dump()
 
 def dump():
     my_collection = db.main
+    my_collection_t = db.user
     my_collection.drop()
     my_collection.insert_one(data)
+    my_collection_t.drop()
+    my_collection_t.insert_one(userd)
     '''with open('data.json', 'w+') as f:
         json.dump(data, f)'''
 
