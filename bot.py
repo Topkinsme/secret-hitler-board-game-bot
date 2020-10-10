@@ -373,15 +373,15 @@ async def profile(ctx,user:discord.User=None):
     profile=discord.Embed(colour=discord.Colour.teal())
     profile.set_author(name="Profile-")
     profile.set_thumbnail(url=url)
-    profile.add_field(name="Username",value="{}".format(name))
-    profile.add_field(name="Games won to Games played",value="{}/{}".format(userd['users'][user]['won'],userd['users'][user]['games']))
-    profile.add_field(name="Roles",value="Times as lib - {} \nTimes as Fac - {} \nTimes as Hit - {}".format(userd['users'][user]['tlib'],userd['users'][user]['tfac'],userd['users'][user]['thit']))
-    profile.add_field(name="Wins",value="Wins as lib - {} \nWins as Fac - {} \nWins by enacting 5 lib policies - {} \nWins by enacting 6 fac policies - {} \nWins by electing Hit - {} \nWins by assasinating Hit - {}".format(userd['users'][user]['wonl'],userd['users'][user]['wonf'],userd['users'][user]['wonle'],userd['users'][user]['wonfe'],userd['users'][user]['wonfhe'],userd['users'][user]['wonlk']))
+    profile.add_field(name="Username-",value="{}".format(name),inline=False)
+    profile.add_field(name="Games won to Games played-",value="{}/{}".format(userd['users'][user]['won'],userd['users'][user]['games']),inline=False)
+    profile.add_field(name="Roles-",value="Times as lib - {} \nTimes as Fac - {} \nTimes as Hit - {}".format(userd['users'][user]['tlib'],userd['users'][user]['tfac'],userd['users'][user]['thit']),inline=False)
+    profile.add_field(name="Wins-",value="Wins as lib - {} \nWins as Fac - {} \nWins by enacting 5 lib policies - {} \nWins by enacting 6 fac policies - {} \nWins by electing Hit - {} \nWins by assasinating Hit - {}".format(userd['users'][user]['wonl'],userd['users'][user]['wonf'],userd['users'][user]['wonle'],userd['users'][user]['wonfe'],userd['users'][user]['wonfhe'],userd['users'][user]['wonlk']),inline=False)
     if userd['users'][user]['notif']==0:
       text="0 - Notifications Off"
     elif userd['users'][user]['notif']==1:
       text="1 - Notifications On"
-    profile.add_field(name="Notify Mode-",value=text)
+    profile.add_field(name="Notify Mode-",value=text,inline=False)
     await ctx.send(embed=profile)
 
     
