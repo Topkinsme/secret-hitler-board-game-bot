@@ -329,6 +329,7 @@ async def notifyme(ctx):
     ath=str(ctx.author.id)
     if ath not in userd['users']:
       makeacc(ath)
+    
     if userd['users'][ath]['notif']==0:
         userd['users'][ath]['notif']=1
         await ctx.send("You will now be notified when future games occur.")
@@ -1397,9 +1398,11 @@ async def cards(ctx):
 
 def makeacc(ath):
       global userd
-      userd['users'][ath]={}
       guildd=bot.get_guild(706761016041537539)
       userr=discord.utils.get(guildd.members,id=int(ath))
+      if userr.bot ==True:
+        return
+      userd['users'][ath]={}
       userd['users'][ath]['name'] = userr.name
       userd['users'][ath]['tlib'] = 0
       userd['users'][ath]['tfac']= 0 
