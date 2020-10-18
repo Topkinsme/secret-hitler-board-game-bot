@@ -292,15 +292,16 @@ async def ping(ctx):
     await ctx.send("Pong!")
     dump()
 
-@bot.command()
-async def table(ctx):
+@bot.command(aliases=["table"])
+async def datatable(ctx):
+  '''Use this to get a useful info table.'''
   await ctx.send("""__**Table-**__
 
 **Role Distribution-**
 
 Players   |     5    |     6    |     7    |     8    |     9     |   10
 ─────────────────────────────
-Liberals  |     3    |     4    |     4    |     5    |     6    |     6
+Liberals  |     3    |     4    |     4    |     5    |     5    |     6
 ─────────────────────────────
 Fascists  |  1+H  |  1+H  |  2+H  |  2+H  |  3+H  |  3+H
 
@@ -322,7 +323,7 @@ Fascist Board if 9-10 players - :mag::mag::pen_ballpoint::dagger::dagger::crown:
     
 @bot.command(aliases=["notif"])
 async def notifyme(ctx):
-    '''Use this to get or remove the notify role from yourself'''
+    '''Use this to add or remove yourself from the notify list.'''
     global data
     global userd
     guildd=bot.get_guild(706761016041537539)
@@ -335,7 +336,7 @@ async def notifyme(ctx):
         await ctx.send("You will now be notified when future games occur.")
     else:
         userd['users'][ath]['notif']=0
-        await ctx.send("You will now not be notified when future games occur.")
+        await ctx.send("You will now **not** be notified when future games occur.")
     dump()
 
 @bot.command()
@@ -665,7 +666,7 @@ async def round():
     data['logz'].append("President was {}".format(prez.mention))
     dump()
 
-@bot.command(aliases=["nom"])
+@bot.command(aliases=["nom","n"])
 @commands.has_role("Players")
 async def nominate(ctx,user:discord.Member):
     '''Use this to nominate someone to become chancellor <President>'''
@@ -757,7 +758,7 @@ async def legis():
     first = data['deck'].pop(0)
     second = data['deck'].pop(0)
     third = data['deck'].pop(0)
-    msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose.".format(first,second,third))
+    msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose. \n**PICK THE CARD YOU WANT TO DISCARD.**".format(first,second,third))
     data['logz'].append("The president drew {},{},{}".format(first,second,third))
     one="\U0001f1e6"
     two="\U0001f1e7"
@@ -796,7 +797,7 @@ async def legis():
     data['logz'].append("The president discarded {}".format(throw))
     user=data['power']['chan']
     userr=discord.utils.get(guildd.members,id=int(user))
-    msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose. Do not select a discarded card.".format(first,second,third))
+    msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose. Do not select a discarded card.\n**PICK THE CARD YOU WANT TO DISCARD.**".format(first,second,third))
     one="\U0001f1e6"
     two="\U0001f1e7"
     three="\U0001f1e8"
@@ -1076,7 +1077,7 @@ async def fail():
         data['card']=nexkt
         await winchecks()
         data['failcounter']=0
-    await board()
+    await board(lobby)
     await lobby.send("You have 20 seconds to discuss before the next round starts.")
     await asyncio.sleep(20)
     await lobby.send("Time for next round!")
@@ -1171,7 +1172,7 @@ async def winchecks():
             userr=discord.utils.get(guildd.members,id=int(user))
             await userr.send("Use !kill to kill a person.")
             cankill=1
-    await board()
+    await board(lobby)
     data['logz'].append("There are {} Liberal policies and {} Fascist policies.".format(data['liblaw'],data['faclaw']))
     dump()
 
@@ -1298,7 +1299,7 @@ async def drawdekk():
     data['logz'].append(temp)
     dump()
     
-async def board():
+async def board(chnl):
     board=discord.Embed(colour=discord.Colour.gold())
     board.set_author(name="The board currently looks like this!")
     liblawn="Cards - "
@@ -1324,7 +1325,7 @@ async def board():
       powers+=":black_circle::black_circle::eye::dagger::dagger::crown: "
     board.add_field(name="Fascist powers-",value=powers,inline="false")
     board.add_field(name="Fail counter- ",value=failc,inline="false")
-    await lobby.send(embed=board)
+    await chnl.send(embed=board)
 
 
 @tasks.loop(seconds=60)
@@ -1366,12 +1367,12 @@ async def timeoutloop():
                 await ctx.author.remove_roles(role)
             break'''
 
-@bot.command()
+@bot.command(aliases=["board","db"])
 async def displayboard(ctx):
     '''Use this to display the board'''
-    await board()
+    await board(ctx.channel)
 
-@bot.command()
+@bot.command(aliases=["players","p"])
 async def playerorder(ctx):
     '''Use this to display the player order'''
     msg = await ctx.send("Loading.")
