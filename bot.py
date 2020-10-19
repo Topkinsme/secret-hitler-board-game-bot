@@ -96,6 +96,8 @@ async def on_message(message):
         return
     '''if message.channel.id!=754034408410972181:
         return'''
+    if message.guild==None:
+      await annchannel.send(f"<{message.author}> {message.content}")
     ath=str(message.author.id)
     if ath not in userd['users']:
       makeacc(ath)
@@ -157,21 +159,21 @@ async def on_user_update(before,after):
 
 
 @bot.command()
-@commands.has_role("Game Master")
+@commands.has_role("Admin")
 async def pdata(ctx):
     '''Send the complete data file. <Game master>'''
     print(data)
     await ctx.send(data)
 
 @bot.command()
-@commands.has_role("Game Master")
+@commands.has_role("Admin")
 async def puserd(ctx):
     '''Send the complete data file. <Game master>'''
     print(userd)
     await ctx.send(userd)
 
 @bot.command(hidden=True)
-@commands.has_role("Game Master")
+@commands.has_role("Admin")
 async def sudo(ctx,who: discord.User, *, command: str):
         """Run a command as another user optionally in another channel."""
         msg = copy.copy(ctx.message)
@@ -184,11 +186,17 @@ async def sudo(ctx,who: discord.User, *, command: str):
         await bot.invoke(new_ctx)
     
 @bot.command()
-@commands.has_role("Game Master")
+@commands.has_role("Admin")
 async def logout(ctx):
     '''Logs out the bot'''
     await ctx.send("Logging out.")
     await bot.logout()
+
+@bot.command()
+@commands.has_role("Admin")
+async def evall(ctx,thing:str):
+    '''Logs out the bot'''
+    await ctx.send(eval(thing))
     
 @bot.command()
 @commands.has_role("Game Master")
@@ -235,7 +243,7 @@ async def ban(ctx,member:discord.Member):
     await ctx.send("{} has been banned from the server.".format(member.mention))
     
 @bot.command()
-@commands.has_role("Game Master")
+@commands.has_role("Admin")
 async def compreset(ctx):
     '''Complete reset. <Game master>'''
     global data
