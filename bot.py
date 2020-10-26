@@ -16,6 +16,8 @@ import json
 import copy
 import pymongo,dns
 import keep_alive
+import inspect
+import textwrap
 
 token = str(os.environ.get("tokeno"))
 dbpass=str(os.environ.get("dbpass"))
@@ -46,7 +48,7 @@ async def on_ready():
     lobby = bot.get_channel(754034408410972181)
     peochannel = bot.get_channel(706771948708823050)
     annchannel = bot.get_channel(760783052745080902)
-    await lobby.send("Who's up for a game?! :smiley:")
+    #no pls await lobby.send("Who's up for a game?! :smiley:")
     await annchannel.send("The bot is online!")
     await bot.change_presence(activity=discord.Game(name="Secret Hitler!", type=1))
     try:
@@ -194,9 +196,24 @@ async def logout(ctx):
 
 @bot.command()
 @commands.has_role("Admin")
-async def evall(ctx,thing:str):
-    '''Logs out the bot'''
-    await ctx.send(eval(thing))
+async def evall(ctx,*,thing:str):
+    '''Eval command'''
+    ctx=ctx
+    try:
+      res = eval(thing)
+      if inspect.isawaitable(res):
+            await res
+            await ctx.send("Command executed!")
+      else:
+            #await ctx.send("Command executed!!")
+            await ctx.send(res)
+    except Exception as e:
+        try:
+          exec(thing)
+          await ctx.send("Command executed!")
+        except:
+          await ctx.send(f"Eval failed! Exception - {e}")
+
     
 @bot.command()
 @commands.has_role("Game Master")
