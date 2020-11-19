@@ -46,6 +46,7 @@ async def on_ready():
     global lastping
     global gamestate
     global starttime
+    global logz
     lobby = bot.get_channel(754034408410972181)
     peochannel = bot.get_channel(706771948708823050)
     annchannel = bot.get_channel(760783052745080902)
@@ -63,6 +64,7 @@ async def on_ready():
             print(data)'''
         gamestate=data['gamestate']
         lastping=None
+        logz=commands.Paginator(prefix="",suffix="")
     except:
         print("Could not load the data")
         data={}
@@ -81,7 +83,6 @@ async def on_ready():
         data['failcounter']=0
         data['dekk']=[]
         data['board']=0
-        data['logz']=[]
         userd={}
         userd['users']={}
         await annchannel.send("The notif list has been erased!!!")
@@ -293,6 +294,7 @@ async def compreset(ctx):
     '''Complete reset. <Game master>'''
     global data
     global gamestate
+    global logz
     data={}
     data['signedup']={}
     data['players']={}
@@ -309,7 +311,7 @@ async def compreset(ctx):
     data["card"]=""
     data['dekk']=[]
     data['board']=0
-    data['logz']=[]
+    logz.clear()
     await ctx.send("A complete erasure of all data has been done.")
     dump()
 
@@ -541,6 +543,7 @@ async def start():
     global data
     global gamestate
     global dekk
+    global logz
     gamestate =1
     data['gamestate']=1
     playernum=0
@@ -563,32 +566,32 @@ async def start():
         libn=3
         facn=1
         data['board']=1
-        data['logz'].append("The game had 5 players.")
+        logz.add_line("The game had 5 players.")
     elif playernum==6:
         libn=4
         facn=1
         data['board']=1
-        data['logz'].append("The game had 6 players.")
+        logz.add_line("The game had 6 players.")
     elif playernum==7:
         libn=4
         facn=2
         data['board']=2
-        data['logz'].append("The game had 7 players.")
+        logz.add_line("The game had 7 players.")
     elif playernum==8:
         libn=5
         facn=2
         data['board']=2
-        data['logz'].append("The game had 8 players.")
+        logz.add_line("The game had 8 players.")
     elif playernum==9:
         libn=5
         facn=3
         data['board']=3
-        data['logz'].append("The game had 9 players.")
+        logz.add_line("The game had 9 players.")
     elif playernum==10:
         libn=6
         facn=3
         data['board']=3
-        data['logz'].append("The game had 10 players.")
+        logz.add_line("The game had 10 players.")
     listoplayers=[]
     rolelist=[]
     for a in range(libn):
@@ -653,7 +656,7 @@ async def start():
         except:
             print("Someone has blocked me")
         players.append(str(userr.id))
-        data['logz'].append("{} had the role {}".format(userr.mention,data['players'][ath]['role']))
+        logz.add_line("{} had the role {}".format(userr.mention,data['players'][ath]['role']))
     print(players)
     data['dekk']=['Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Liberal Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy','Fascist Policy']
     await drawdekk()
@@ -673,11 +676,12 @@ async def round():
     global data
     global canpass
     global prez
+    global logz
     guildd=bot.get_guild(706761016041537539)
     gamestate =2
     data['gamestate']=2
     roundno=data['roundno']
-    data['logz'].append("--------------Round - {}".format(data['roundno']))
+    logz.add_line("--------------Round - {}".format(data['roundno']))
     if len(data['deck'])<3:
         await drawdekk()
     try:
@@ -716,7 +720,7 @@ async def round():
             data['power']['prez']=data['playerorder'][roundno]
             data['roundno']+=1
     await lobby.send("Your president is {}. Please nominate a person using !nominate.".format(prez.mention))
-    data['logz'].append("President was {}".format(prez.mention))
+    logz.add_line("President was {}".format(prez.mention))
     dump()
 
 @bot.command(aliases=["nom","n"])
@@ -725,6 +729,7 @@ async def nominate(ctx,user:discord.Member):
     '''Use this to nominate someone to become chancellor <President>'''
     global data
     global gamestate
+    global logz
     guildd=bot.get_guild(706761016041537539)
     if gamestate!=2:
         await ctx.send("It's not the right time.")
@@ -761,7 +766,7 @@ async def nominate(ctx,user:discord.Member):
     gamestate =3
     data['gamestate']=3
     msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 20 seconds.".format(user.mention))
-    data['logz'].append("{} was nominated.".format(user.mention))
+    logz.add_line("{} was nominated.".format(user.mention))
     yes= "✅"
     no="❎"
     await msg.add_reaction(yes)
@@ -781,18 +786,18 @@ async def nominate(ctx,user:discord.Member):
     print(ja,nein)
     dump()
     if ja>nein:
-        data['logz'].append("{} was successfully elected.".format(user.mention))
+        logz.add_line("{} was successfully elected.".format(user.mention))
         await lobby.send("{} has been elected as your chancellor!".format(user.mention))
         data['power']['chan']=str(user.id)
         if data['faclaw']>2 and data['players'][str(user.id)]['role']=="Hitler":
             await lobby.send("The game is now over! Hitler has become the chancellor!")
-            data['logz'].append("**GAME OVER - HITLER WAS ELECTED!**")
+            logz.add_line("**GAME OVER - HITLER WAS ELECTED!**")
             await end("fhe")
             dump()
             return
         await legis()
     else:
-        data['logz'].append("{} was not elected.".format(user.mention))
+        logz.add_line("{} was not elected.".format(user.mention))
         await fail()
     dump()
     
@@ -800,6 +805,7 @@ async def nominate(ctx,user:discord.Member):
 async def legis():
     global gamestate
     global data
+    global logz
     gamestate =4
     data['gamestate']=4
     guildd=bot.get_guild(706761016041537539)
@@ -812,7 +818,7 @@ async def legis():
     second = data['deck'].pop(0)
     third = data['deck'].pop(0)
     msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose. \n**PICK THE CARD YOU WANT TO DISCARD.**".format(first,second,third))
-    data['logz'].append("The president drew {},{},{}".format(first,second,third))
+    logz.add_line("The president drew {},{},{}".format(first,second,third))
     one="\U0001f1e6"
     two="\U0001f1e7"
     three="\U0001f1e8"
@@ -847,7 +853,7 @@ async def legis():
             keep=first+" and the "+second
             third="[Discarded]"
     await userr.send("Alright you are discarding a {} and passing the {}.".format(throw,keep))
-    data['logz'].append("The president discarded {}".format(throw))
+    logz.add_line("The president discarded {}".format(throw))
     user=data['power']['chan']
     userr=discord.utils.get(guildd.members,id=int(user))
     msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose. Do not select a discarded card.\n**PICK THE CARD YOU WANT TO DISCARD.**".format(first,second,third))
@@ -937,17 +943,17 @@ async def legis():
                     nein+=reaction.count
             if ja>nein:
                 await lobby.send("The government has decided to veto this agenda.")
-                data['logz'].append("The government has decided to veto this agenda.")
+                logz.add_line("The government has decided to veto this agenda.")
                 await fail()
                 return
             else:
                 await lobby.send("The chancellor wanted to veto this agenda but the president didn't agree.")
-                data['logz'].append("The chancellor wanted to veto this agenda but the president didn't agree.")
+                logz.add_line("The chancellor wanted to veto this agenda but the president didn't agree.")
         else:
             await lobby.send("The chancellor did not want to veto this agenda.")
-            data['logz'].append("The chancellor did not want to veto this agenda.")
+            logz.add_line("The chancellor did not want to veto this agenda.")
     await userr.send("Alright you are passing a {}.".format(keep)) 
-    data['logz'].append("The chancellor passed a {}".format(keep))
+    logz.add_line("The chancellor passed a {}".format(keep))
     data['failcounter']=0       
     await picked()
     dump()
@@ -990,6 +996,7 @@ async def kill(ctx,user:discord.Member):
     global data
     global gamestate
     global cankill
+    global logz
     guildd=bot.get_guild(706761016041537539)
     if gamestate!=5:
         await ctx.send("It's not the right time.")
@@ -1012,7 +1019,7 @@ async def kill(ctx,user:discord.Member):
         await ctx.send("You cannot select yourselves.")
         return
     await lobby.send("The president has chosen {} to die.".format(user.mention))
-    data['logz'].append("The president chose {} to die.".format(user.mention))
+    logz.add_line("The president chose {} to die.".format(user.mention))
     data['players'][str(user.id)]['state']=0
     num = data['playerorder'].index(str(user.id))
     if num<data['roundno']:
@@ -1026,7 +1033,7 @@ async def kill(ctx,user:discord.Member):
         gamestate =6
         data['gamestate']=6
         await lobby.send("Congrats! The liberals have won! They have eliminated hitler!")
-        data['logz'].append("**GAME OVER - HITLER HAS BEEN KILLED.**")
+        logz.add_line("**GAME OVER - HITLER HAS BEEN KILLED.**")
         await end("lk")
         return
         dump()
@@ -1042,6 +1049,7 @@ async def check(ctx,user:discord.Member):
     global data
     global gamestate
     global cancheck
+    global logz
     guildd=bot.get_guild(706761016041537539)
     if gamestate!=5:
         await ctx.send("It's not the right time.")
@@ -1069,7 +1077,7 @@ async def check(ctx,user:discord.Member):
     cancheck=0
     data['players'][str(user.id)]['checked']=1
     await lobby.send("The president has chosen to check {}.".format(user.mention))
-    data['logz'].append("The president chose {} to check.".format(user.mention))
+    logz.add_line("The president chose {} to check.".format(user.mention))
     ath=str(user.id)
     if data['players'][ath]['role']=="Libral":
       say="Libral"
@@ -1085,6 +1093,7 @@ async def passprez(ctx,user:discord.Member):
     global data
     global gamestate
     global canpass
+    global logz
     guildd=bot.get_guild(706761016041537539)
     if gamestate!=5:
         await ctx.send("It's not the right time.")
@@ -1107,7 +1116,7 @@ async def passprez(ctx,user:discord.Member):
         await ctx.send("You cannot select yourselves.")
         return
     await lobby.send("The president has chosen {} as the next president. Please wait a few seconds and the next round will start.".format(user.mention))
-    data['logz'].append("The president chose {} to be the next president.".format(user.mention))
+    logz.add_line("The president chose {} to be the next president.".format(user.mention))
     id=user.id
     data['power']['prez']=str(id)
     canpass=2
@@ -1115,12 +1124,13 @@ async def passprez(ctx,user:discord.Member):
 
 async def fail():
     global data
+    global logz
     await lobby.send("The government has failed!")
     data['failcounter']+=1
     if data['failcounter']>2:
         await lobby.send("The government has failed thrice.")
-        data['logz'].append("The government had failed thrice.")
-        data['logz'].append("There are {} Liberal policies and {} Fascist policies.".format(data['liblaw'],data['faclaw']))
+        logz.add_line("The government had failed thrice.")
+        logz.add_line("There are {} Liberal policies and {} Fascist policies.".format(data['liblaw'],data['faclaw']))
         nexkt=data['deck'][0]
         data['deck'].pop(0)
         if nexkt=="Liberal Policy":
@@ -1143,6 +1153,7 @@ async def winchecks():
     global cankill
     global cancheck
     global canpass
+    global logz
     cankill=0
     cancheck=0
     canpass=0
@@ -1155,7 +1166,7 @@ async def winchecks():
             gamestate =6
             data['gamestate']=6
             await lobby.send("Congrats! The liberals have won!")
-            data['logz'].append("**GAME OVER - Liberals have passed 5 policies.**")
+            logz.add_line("**GAME OVER - Liberals have passed 5 policies.**")
             await end("le")
             return
             dump()
@@ -1168,7 +1179,7 @@ async def winchecks():
             gamestate =6
             data['gamestate']=6
             await lobby.send("Congrats! The Fascists have won!")
-            data['logz'].append("**GAME OVER - Fascists have passed 6 policies.**")
+            logz.add_line("**GAME OVER - Fascists have passed 6 policies.**")
             await end("fe")
             return
             dump()
@@ -1226,13 +1237,14 @@ async def winchecks():
             await userr.send("Use !kill to kill a person.")
             cankill=1
     await board(lobby)
-    data['logz'].append("There are {} Liberal policies and {} Fascist policies.".format(data['liblaw'],data['faclaw']))
+    logz.add_line("There are {} Liberal policies and {} Fascist policies.".format(data['liblaw'],data['faclaw']))
     dump()
 
 async def end(who):
     global data
     global userd
     global gamestate
+    global logz
     win="The winners are-\n"
     lose="The people who didn't win are-\n"
     if who=="le":
@@ -1285,7 +1297,7 @@ async def end(who):
     await lobby.send("{} \n\n {}".format(win,lose))
     await annchannel.send("{} \n\n {}".format(win,lose))
     log="-\nThe game went like this-\n\n"
-    for a in data['logz']:
+    '''for a in data['logz']:
       log+=a
       log+="\n"
     if len(log)>2000:
@@ -1295,7 +1307,10 @@ async def end(who):
       await annchannel.send(log[2000:])
     else:
       await lobby.send(log)
-      await annchannel.send(log)
+      await annchannel.send(log)'''
+    for page in logz.pages:
+      await lobby.send(page)
+      await annchannel.send(page)
     guildd=bot.get_guild(706761016041537539)
     role1 = discord.utils.get(guildd.roles, name="Players")
     role2 = discord.utils.get(guildd.roles, name="Dead")
@@ -1330,12 +1345,13 @@ async def end(who):
     data["card"]=""
     data['dekk']=[]
     data['board']=0
-    data['logz']=[]
+    logz.clear()
     await lobby.send("Game has been reset")
     dump()
     
 async def drawdekk():
     global data
+    global logz
     print(data['deck'])
     print(data['dekk'])
     data['deck']=[]
@@ -1344,12 +1360,12 @@ async def drawdekk():
       random.shuffle(data['dekk'])
     data['deck']=copy.deepcopy(data['dekk'])
     await lobby.send("A new deck has been formed.")
-    data['logz'].append("A new deck was formed. It was - ")
+    logz.add_line("A new deck was formed. It was - ")
     temp=""
     for itemm in data['deck']:
       temp+=itemm
       temp+=" "
-    data['logz'].append(temp)
+    logz.add_line(temp)
     dump()
     
 async def board(chnl):
