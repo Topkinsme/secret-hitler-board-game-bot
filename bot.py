@@ -18,6 +18,7 @@ import pymongo,dns
 import keep_alive
 import inspect
 import textwrap
+import io
 
 token = str(os.environ.get("tokeno"))
 dbpass=str(os.environ.get("dbpass"))
@@ -116,6 +117,9 @@ async def on_member_join(member):
 @bot.event
 async def on_member_remove(member):
     await annchannel.send("{} has left the server.".format(member.mention))
+    ath=str(ath.id)
+    if ath in userd['users']:
+      userd['users'].pop(ath)
 
 @bot.event
 async def on_reaction_add(reaction,user):
@@ -197,22 +201,46 @@ async def logout(ctx):
 @bot.command()
 @commands.has_role("Admin")
 async def evall(ctx,*,thing:str):
-    '''Eval command'''
-    ctx=ctx
+    '''Eval command <Informer>'''
+    #rdanny's
+    env = {
+            'bot': bot,
+            'ctx': ctx,
+            'channel': ctx.channel,
+            'author': ctx.author,
+            'guild': ctx.guild,
+            'message': ctx.message,
+            #'_': self._last_result
+        }
+
+    env.update(globals())
+    stdout = io.StringIO()
+    if thing.startswith('```') and thing.endswith('```'):
+            a = '\n'.join(thing.split('\n')[1:-1])
+            thing = a.strip('` \n')
+    to_compile = f'async def func():\n{textwrap.indent(thing, "  ")}'
     try:
-      res = eval(thing)
-      if inspect.isawaitable(res):
-            await res
-            await ctx.send("Command executed!")
-      else:
-            #await ctx.send("Command executed!!")
-            await ctx.send(res)
+            exec(to_compile, env)
     except Exception as e:
-        try:
-          exec(thing)
-          await ctx.send("Command executed!")
-        except:
-          await ctx.send(f"Eval failed! Exception - {e}")
+            await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
+    func = env['func']
+    try:
+        ret = await func()
+    except Exception as e:
+            value = stdout.getvalue()
+            await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
+    else:
+            value = stdout.getvalue()
+            try:
+                await ctx.message.add_reaction('\u2705')
+            except:
+                pass
+
+            if ret is None:
+                if value:
+                    await ctx.send(f'```py\n{value}\n```')
+            else:
+                await ctx.send(f'```py\n{value}{ret}\n```')
 
     
 @bot.command()
