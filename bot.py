@@ -118,7 +118,7 @@ async def on_member_join(member):
 @bot.event
 async def on_member_remove(member):
     await annchannel.send("{} has left the server.".format(member.mention))
-    ath=str(ath.id)
+    ath=str(member.id)
     if ath in userd['users']:
       userd['users'].pop(ath)
 
@@ -719,7 +719,27 @@ async def round():
             guildd=bot.get_guild(706761016041537539)
             data['power']['prez']=data['playerorder'][roundno]
             data['roundno']+=1
-    await lobby.send("Your president is {}. Please nominate a person using !nominate.".format(prez.mention))
+    effect=""
+    if data['board']==1:
+      if data['faclaw']==2:
+        effect="**If a facist law is enacted, the president will get to see the next 3 cards.**"
+    elif data['board']==2:
+      if data['faclaw']==1:
+        effect="**If a facist law is enacted, the president will get to check the loyalty of a person.**"
+      elif data['faclaw']==2:
+        effect="**If a facist law is enacted, the president will get to choose the next president.**"
+    elif data['board']==3:
+      if data['faclaw']==0:
+        effect="**If a facist law is enacted, the president will get to check the loyalty of a person.**"
+      elif data['faclaw']==1:
+        effect="**If a facist law is enacted, the president will get to check the loyalty of a person.**"
+      elif data['faclaw']==2:
+        effect="**If a facist law is enacted, the president will get to choose the next president.**"
+    if data['faclaw']==3 or data['faclaw']==4:
+        effect="**If a facist law is enacted, the president will get tthe power to kill someone.**"
+    elif data['faclaw']==5:
+        effect="**If a facist law is enacted, the fascists will win.**"
+    await lobby.send("Your president is {}. Please nominate a person using !nominate. \n {}".format(prez.mention,effect))
     logz.add_line("President was {}".format(prez.mention))
     dump()
 
