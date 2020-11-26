@@ -785,13 +785,13 @@ async def nominate(ctx,user:discord.Member):
         pass
     gamestate =3
     data['gamestate']=3
-    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 20 seconds.".format(user.mention))
+    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 60 seconds.".format(user.mention))
     logz.add_line("{} was nominated.".format(user.mention))
     yes= "✅"
     no="❎"
     await msg.add_reaction(yes)
     await msg.add_reaction(no)
-    await asyncio.sleep(20)
+    await asyncio.sleep(60)
     ja=0
     nein=0
     channel=msg.channel
