@@ -616,7 +616,7 @@ async def start():
         role= random.choice(rolelist)
         rolelist.remove(role)
         data['players'][user]['role']=role
-        data['players'][ath]['checked']=0
+        data['players'][user]['checked']=0
         data['players'][user]['state']=1
         if data['players'][user]['role']=="Hitler":
             userr=discord.utils.get(guildd.members,id=int(user))
