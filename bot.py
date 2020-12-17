@@ -315,15 +315,52 @@ async def compreset(ctx):
     await ctx.send("A complete erasure of all data has been done.")
     dump()
 
+@bot.command()
+@commands.has_role("Game Master")
+async def forceend(ctx):
+    '''Use this command to force end the game.'''
+    global data
+    guildd=bot.get_guild(706761016041537539)
+    role1 = discord.utils.get(guildd.roles, name="Players")
+    role2 = discord.utils.get(guildd.roles, name="Dead")
+    for ath in data['players']:
+        userr=discord.utils.get(guildd.members,id=int(ath))
+        await userr.remove_roles(role1)
+        await userr.remove_roles(role2)
+        
+    chnl=discord.utils.get(guildd.channels,name="lobby")
+    await chnl.set_permissions(guildd.default_role,read_messages=True,send_messages=True)
+    chnl=discord.utils.get(guildd.channels,name="lobby")
+    await chnl.set_permissions(role1,read_messages=True,send_messages=True)
+    data={}
+    data['signedup']={}
+    data['players']={}
+    data['gamestate']=0
+    gamestate=0
+    data['deck']=[]
+    data['playerorder']=[]
+    data['roundno']=0
+    data['liblaw']=0
+    data['faclaw']=0
+    data['failcounter']=0
+    data['power']={}
+    data["card"]=""
+    data['dekk']=[]
+    data['board']=0
+    logz.clear()
+    await lobby.send("Game has been reset.")
+    dump()
+
+
 @bot.command(aliases=["^","pro"])
-@commands.has_role("admin")
+@commands.has_role("gm")
 async def promote(ctx):
   '''To promote yourself. <Game Master>'''
   guildd=bot.get_guild(706761016041537539)
   role = discord.utils.get(guildd.roles, name="Game Master")
   ath = str(ctx.author.id)
   await ctx.author.add_roles(role)
-  role = discord.utils.get(guildd.roles, name="admin")
+  role = discord.utils.get(guildd.roles, name="gm")
   await ctx.author.remove_roles(role)
   await ctx.send("You have been promoted , {}".format(ctx.author.mention))
 
@@ -332,7 +369,7 @@ async def promote(ctx):
 async def demote(ctx):
   '''To promote yourself. <Game Master>'''
   guildd=bot.get_guild(706761016041537539)
-  role = discord.utils.get(guildd.roles, name="admin")
+  role = discord.utils.get(guildd.roles, name="gm")
   ath = str(ctx.author.id)
   await ctx.author.add_roles(role)
   role = discord.utils.get(guildd.roles, name="Game Master")
@@ -736,12 +773,59 @@ async def round():
       elif data['faclaw']==2:
         effect="**If a facist law is enacted, the president will get to choose the next president.**"
     if data['faclaw']==3 or data['faclaw']==4:
-        effect="**If a facist law is enacted, the president will get tthe power to kill someone.**"
+        effect="**If a facist law is enacted, the president will get the power to kill someone.**"
     elif data['faclaw']==5:
         effect="**If a facist law is enacted, the fascists will win.**"
     await lobby.send("Your president is {}. Please nominate a person using !nominate. \n {}".format(prez.mention,effect))
     logz.add_line("President was {}".format(prez.mention))
     dump()
+
+@bot.command(aliases=["myr"])
+@commands.has_role("Players")
+async def myrole(ctx):
+  '''Use this to make the bot send you your role.'''
+  guildd=bot.get_guild(706761016041537539)
+  playernum=0
+  facs=[]
+  for ath in data['signedup']:
+      playernum+=1
+      if data['players'][ath]['role']=="Hitler":
+                userr=discord.utils.get(guildd.members,id=int(ath))
+                hitler=userr.name
+      elif data['players'][ath]['role']=="Fascist":
+                userr=discord.utils.get(guildd.members,id=int(ath))
+                facs.append(userr.name)
+  ath=str(ctx.author.id)
+  userr=discord.utils.get(guildd.members,id=int(ath))
+  roleinfo=discord.Embed(colour=discord.Colour.red())
+  roleinfo.set_author(name="Role info!")
+  roleinfo.add_field(name="This message has been sent to you to inform you of the role you have in the next up coming game in the Secret Hitler server!",value="**Your role for this game is `{}`!** \n You are **__not__** allowed to share this message! \n You are **__not__** allowed to share the screenshot of this message! \n Breaking any of these rules can result in you being banned from the server.".format(data['players'][ath]['role']),inline="false")
+  if data['players'][ath]['role']=="Hitler":
+            if playernum >6:
+                a="Since this game has over 6 people , you will not not know who's on your team."
+            else:
+                people = ""
+                for person in facs:
+                    people += person + " "
+                a="Your team consists of "+people
+  elif data['players'][ath]['role']=="Fascist":
+                a = "Your leader is "+hitler
+                people = ""
+                for person in facs:
+                    people += person + " "
+                a+=". Your team consists of "+people
+  elif data['players'][ath]['role']=="Liberal":
+            a="As a liberal, you do not know who your team mates are. Good luck."
+  else:
+    a="-"
+  roleinfo.add_field(name=a,value="Have a good game!\n *I am a bot and this action has been done automatically. Please contact the Game Masters if anything is unclear.* ",inline="false")
+  try:
+        await userr.send(embed=roleinfo)
+        await ctx.send("I have sent you your role.")
+  except:
+        await ctx.send("You have blocked me or disabled dms.")
+
+
 
 @bot.command(aliases=["nom","n"])
 @commands.has_role("Players")
