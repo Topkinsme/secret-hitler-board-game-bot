@@ -1183,8 +1183,8 @@ async def check(ctx,user:discord.Member):
     await lobby.send("The president has chosen to check {}.".format(user.mention))
     logz.add_line("The president chose {} to check.".format(user.mention))
     ath=str(user.id)
-    if data['players'][ath]['role']=="Libral":
-      say="Libral"
+    if data['players'][ath]['role']=="Liberal":
+      say="Liberal"
     else:
       say="Fascist"
     await ctx.author.send("The person you checked is of loyalty {}.".format(say))
