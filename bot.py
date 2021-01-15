@@ -451,7 +451,9 @@ async def notify(ctx):
                   msg+="<@{}> ".format(ath)
         await ctx.send(msg)
     else:
-        await ctx.send("Please wait {} longer. The last ping was on {}.".format(timedelta(minutes=30)-(datetime.datetime.now()-lastping),lastping))
+        a = str(lastping)
+        b=str(timedelta(minutes=30)-(datetime.datetime.now()-lastping))
+        await ctx.send("Please wait {} longer. The last ping was on {}.".format(b[:-7],a[11:-7]))
     dump()
 
 @bot.command()
@@ -518,14 +520,15 @@ async def signup(ctx):
 @bot.command(aliases=["slist","sl"])
 async def signeduplist(ctx):
     '''Tells you the number of people that have signed up'''
-    msg = await ctx.send("Loading.")
-    temp=""
+    temp=discord.Embed(colour=random.randint(0, 0xffffff))
+    temp.set_author(name="The list of people signed up are-")
+    text="​"
     a=0
     for person in data['signedup']:
-        temp+="<@{}> \n".format(person)
+        text+=f"<@{person}> \n"
         a+=1
-    temp+="The number of people who have signed up is- {}".format(a)
-    await msg.edit(content=temp)
+    temp.add_field(name=f"The number of people who have signed up is- {a}",value=text,inline="false") 
+    await ctx.send(embed=temp)
 
 @bot.command(aliases=["vs"])
 @commands.has_role("Signed-Up")
@@ -571,8 +574,8 @@ async def time(ctx):
     await ctx.send("Lobby Empty.")
     return
   try:
-    timeo = timedelta(minutes=30) -(datetime.datetime.now()-starttime)
-    await ctx.send("{} time left before the lobby is timed out".format(timeo))
+    timeo = str(timedelta(minutes=30) -(datetime.datetime.now()-starttime))
+    await ctx.send("{} time left before the lobby is timed out".format(timeo[:-7]))
   except:
     await ctx.send("Lobby empty or a game is going on. Or there was a error.")
 
@@ -1244,11 +1247,14 @@ async def fail():
         data['card']=nexkt
         await winchecks()
         data['failcounter']=0
-    await board(lobby)
-    await lobby.send("You have 20 seconds to discuss before the next round starts.")
-    await asyncio.sleep(20)
-    await lobby.send("Time for next round!")
-    await round()
+    if gamestate!=3:
+      return
+    else:
+      await board(lobby)
+      await lobby.send("You have 20 seconds to discuss before the next round starts.")
+      await asyncio.sleep(20)
+      await lobby.send("Time for next round!")
+      await round()
     dump()
     
 async def winchecks():
@@ -1548,14 +1554,15 @@ async def displayboard(ctx):
 @bot.command(aliases=["players","p"])
 async def playerorder(ctx):
     '''Use this to display the player order'''
-    msg = await ctx.send("Loading.")
-    temp=""
+    temp=discord.Embed(colour=random.randint(0, 0xffffff))
+    temp.set_author(name="The player order is -")
+    text="​"
     a=0
-    temp+="The player order is \n"
     for person in data['playerorder']:
-        temp+="<@{}> \n".format(person)
+        text+="<@{}> \n".format(person)
         a+=1
-    await msg.edit(content=temp)
+    temp.add_field(name=f"Number of alive people is {a}",value=text,inline="false")
+    await ctx.send(embed=temp)
 
 @bot.command()
 async def cards(ctx):
