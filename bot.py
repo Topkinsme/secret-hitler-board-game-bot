@@ -89,6 +89,11 @@ async def on_ready():
     if len(data['signedup'])>0 and gamestate==0:
         starttime=datetime.datetime.now()
         timeoutloop.start()
+    if data['gamestate']>0:
+      msg = await lobby.send("Terribly sorry for the inconvenience, but it seems like the bot went offline during the game. As a result, the game probably malfunctioned and so I am going to automatically force end it. Contact the admins to do the rest. Again, sorry for the inconvenience.")
+      ctx=await bot.get_context(msg)
+      await forceend(ctx)
+      dump()
 
         
 
@@ -117,10 +122,18 @@ async def on_member_join(member):
     
 @bot.event
 async def on_member_remove(member):
+    global data
     await annchannel.send("{} has left the server.".format(member.mention))
     ath=str(member.id)
     if ath in userd['users']:
       userd['users'].pop(ath)
+    if ath in data['players']:
+      msg = await lobby.send("A member of the game has abruptly left the game. In order to not crash the bot, the game has been force ended automatically. Please contact game admins to do the rest.")
+      ctx=await bot.get_context(msg)
+      data['players'].pop(ath)
+      data['signedup'].pop(ath)
+      await forceend(ctx)
+      dump()
 
 @bot.event
 async def on_reaction_add(reaction,user):
@@ -320,6 +333,7 @@ async def compreset(ctx):
 async def forceend(ctx):
     '''Use this command to force end the game.'''
     global data
+    global gamestate
     guildd=bot.get_guild(706761016041537539)
     role1 = discord.utils.get(guildd.roles, name="Players")
     role2 = discord.utils.get(guildd.roles, name="Dead")
@@ -357,8 +371,17 @@ async def forceend(ctx):
 async def promote(ctx):
   '''To promote yourself. <Game Master>'''
   guildd=bot.get_guild(706761016041537539)
-  role = discord.utils.get(guildd.roles, name="Game Master")
   ath = str(ctx.author.id)
+  rolz=[]
+  role1 = discord.utils.get(guildd.roles, name="Players")
+  role2 = discord.utils.get(guildd.roles, name="Signed-Up")
+  rolz.append(role1)
+  rolz.append(role2)
+  for role in rolz:
+    if role in ctx.author.roles:
+      await ctx.send("It seems you might be in a game. Please wait for the game to get over before you can promote. If there is a issue, ping another game master to sort it out.")
+      return
+  role = discord.utils.get(guildd.roles, name="Game Master")
   await ctx.author.add_roles(role)
   role = discord.utils.get(guildd.roles, name="gm")
   await ctx.author.remove_roles(role)
@@ -494,6 +517,10 @@ async def signup(ctx):
     if not ath in data['signedup']:
         if len(data['signedup'])>9:
             await ctx.send("Lobby at maximum capacity. Please try again later!")
+            return
+        role = discord.utils.get(ctx.message.guild.roles, name="Game Master")
+        if role in ctx.author.roles:
+            await ctx.send("It seems you might have roles that are meant to run the game. Please demote before you can play.")
             return
         if data['signedup']=={}:
           try:
@@ -924,7 +951,7 @@ async def legis():
     first = data['deck'].pop(0)
     second = data['deck'].pop(0)
     third = data['deck'].pop(0)
-    msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose. \n**PICK THE CARD YOU WANT TO DISCARD.**".format(first,second,third))
+    msg = await userr.send("The next three cards in order are {} , {} and {}. React with A , B or C to get rid of the corresponding card. You have 20 seconds to choose. \n```PICK THE CARD YOU WANT TO DISCARD.```".format(first,second,third))
     logz.add_line("The president drew {},{},{}".format(first,second,third))
     one="\U0001f1e6"
     two="\U0001f1e7"
@@ -1225,7 +1252,7 @@ async def passprez(ctx,user:discord.Member):
     await lobby.send("The president has chosen {} as the next president. Please wait a few seconds and the next round will start.".format(user.mention))
     logz.add_line("The president chose {} to be the next president.".format(user.mention))
     id=user.id
-    data['power']['prez']=str(id)
+    data['power']['prez']=str(prez.id)
     canpass=2
     dump()
 
@@ -1355,6 +1382,7 @@ async def end(who):
     global userd
     global gamestate
     global logz
+    global lastping
     win="The winners are-\n"
     lose="The people who didn't win are-\n"
     if who=="le":
@@ -1407,17 +1435,6 @@ async def end(who):
     await lobby.send("{} \n\n {}".format(win,lose))
     await annchannel.send("{} \n\n {}".format(win,lose))
     log="-\nThe game went like this-\n\n"
-    '''for a in data['logz']:
-      log+=a
-      log+="\n"
-    if len(log)>2000:
-      await lobby.send(log[:2000])
-      await annchannel.send(log[:2000])
-      await lobby.send(log[2000:])
-      await annchannel.send(log[2000:])
-    else:
-      await lobby.send(log)
-      await annchannel.send(log)'''
     for page in logz.pages:
       await lobby.send(page)
       await annchannel.send(page)
@@ -1455,6 +1472,7 @@ async def end(who):
     data["card"]=""
     data['dekk']=[]
     data['board']=0
+    lastping=None
     logz.clear()
     await lobby.send("Game has been reset")
     dump()
