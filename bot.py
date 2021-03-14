@@ -618,7 +618,6 @@ async def vstart(ctx):
 
 
 @bot.command(aliases=["t","so"])
-@commands.has_role("Signed-Up")
 async def time(ctx):
   '''Tells you how much time is left before the lobby expires.'''
   if len(data['signedup'])==0:
@@ -631,6 +630,7 @@ async def time(ctx):
     await ctx.send("Lobby empty or a game is going on. Or there was a error.")
 
 @bot.command(aliases=["ex","wait"])
+@commands.has_role("Signed-Up")
 async def extend(ctx):
   '''Adds 5 mins to lobby timeout timer.'''
   global starttime
