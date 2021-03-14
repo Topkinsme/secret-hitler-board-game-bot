@@ -141,13 +141,36 @@ async def on_reaction_add(reaction,user):
     uid=user.id
     guildd=bot.get_guild(706761016041537539)
     role1 = discord.utils.get(guildd.roles, name="Players")
+    #mem
+    if reaction=="⭐":
+      n=0
+      for reaction in msg.reactions:
+        if str(reaction)=="⭐":
+          users = await reaction.users().flatten()
+          n+=len(users)
+      if n==4:
+        chnl=bot.get_channel(755720654682193961)
+        msg=reaction.message
+        mem = discord.Embed(colour=random.randint(0, 0xffffff))
+        mem.set_author(name=msg.author.name,icon_url=msg.author.avatar_url)
+        if msg.content=="":
+          pass
+        else:
+          mem.add_field(name="Message -",value=msg.content,inline="false")
+        if msg.attachments==[]:
+          pass
+        else:
+          athc=msg.attachments
+          mem.set_image(url=athc[0].url)
+        mem.add_field(name="Link -",value=f"[Click This!]({msg.jump_url})",inline="false")
+        await chnl.send(f"<#{msg.channel.id}>",embed=mem)
+      
     if gamestate<1:
         return
     if user.id == 706771257256968243:
         return
     if role1 not in user.roles:
         await reaction.message.remove_reaction(reaction,user)  
-    pass
     
     
 @bot.event
@@ -595,6 +618,7 @@ async def vstart(ctx):
 
 
 @bot.command(aliases=["t","so"])
+@commands.has_role("Signed-Up")
 async def time(ctx):
   '''Tells you how much time is left before the lobby expires.'''
   if len(data['signedup'])==0:
@@ -603,6 +627,22 @@ async def time(ctx):
   try:
     timeo = str(timedelta(minutes=30) -(datetime.datetime.now()-starttime))
     await ctx.send("{} time left before the lobby is timed out".format(timeo[:-7]))
+  except:
+    await ctx.send("Lobby empty or a game is going on. Or there was a error.")
+
+@bot.command(aliases=["ex","wait"])
+async def extend(ctx):
+  '''Adds 5 mins to lobby timeout timer.'''
+  global starttime
+  if len(data['signedup'])==0:
+    await ctx.send("Lobby Empty.")
+    return
+  if gamestate!=0:
+        await ctx.send("Wrong gamestate.")
+        return
+  try:
+    starttime=starttime+timedelta(minutes=5)
+    await ctx.send("Done! The lobby timeout timer has been extended by 5 mins.")
   except:
     await ctx.send("Lobby empty or a game is going on. Or there was a error.")
 
@@ -752,6 +792,11 @@ async def round():
     if len(data['deck'])<3:
         await drawdekk()
     try:
+      data['power']['prevprez']=data['power']['prez']
+    except:
+      data['power']['prevprez']=""
+
+    try:
       if canpass==2:
         ath=data['power']['prez']
         prez=discord.utils.get(guildd.members,id=int(ath))
@@ -855,6 +900,24 @@ async def myrole(ctx):
   except:
         await ctx.send("You have blocked me or disabled dms.")
 
+@bot.command(aliases=["tellmewho","who"])
+async def gamerolesinfo(ctx):
+  '''Makes the bot dm all the role info of the members in game to you.'''
+  guildd=bot.get_guild(706761016041537539)
+  if str(ctx.author.id) in data['players']:
+    if data['players'][str(ctx.author.id)]['state']!=0:
+        await ctx.send("You cannot use this while in game.")
+        return
+  if userd['users'][str(ctx.author.id)]['games']<11:
+    await ctx.send("You need to have atleast 10 played games to be able to use this command, to avoid people misusing this command.")
+    return
+  msg=""
+  for ath in data['players']:
+    userr=discord.utils.get(guildd.members,id=int(ath))
+    msg+="{} has the role {}.\n".format(userr.mention,data['players'][ath]['role'])
+  msg+="***__DO NOT DM THIS MESSAGE OR PASS THIS INFORMATION TO ANYONE IN GAME. DOING SO CAN GET YOU BANNED.__***"
+  await ctx.author.send(msg)
+  await ctx.send("The information was sent to you in your private chat. Please refrain from sharing the information here, as people might be trying to play along.")
 
 
 @bot.command(aliases=["nom","n"])
@@ -891,7 +954,7 @@ async def nominate(ctx,user:discord.Member):
             if data['players'][person]['state']==1:
                 num+=1
         if num>5:
-            if user.id==int(data['power']['prez']):
+            if user.id==int(data['power']['prevprez']):
                 await ctx.send("If more than 5 people are alive , the previous president cannot be elected chancellor.")
                 return
     except:
@@ -899,20 +962,35 @@ async def nominate(ctx,user:discord.Member):
         pass
     gamestate =3
     data['gamestate']=3
-    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 60 seconds.".format(user.mention))
+    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 60 seconds. React with ⛔ if you wish to skip. If everyone in game votes to skip, it will be skipped.".format(user.mention))
     logz.add_line("{} was nominated.".format(user.mention))
     yes= "✅"
     no="❎"
+    skip="⛔"
     await msg.add_reaction(yes)
     await msg.add_reaction(no)
-    await asyncio.sleep(60)
-    ja=0
-    nein=0
+    await msg.add_reaction(skip)
     channel=msg.channel
     msgid = msg.id
+    x=0
+    skips=0
+    while x<12:
+      await asyncio.sleep(5)
+      msg = await channel.fetch_message(msgid)
+      for reaction in msg.reactions:
+        if str(reaction)==skip:
+            skips+=reaction.count
+      num=0
+      for person in data['players']:
+            if data['players'][person]['state']==1:
+                num+=1
+      if num<=reaction.count:
+        break
+      x+=1
+    ja=0
+    nein=0
     msg = await channel.fetch_message(msgid)
-    for reaction in msg.reactions:
-        print(reaction)
+    for reaction in msg.reactions:        
         if str(reaction)==yes:
             ja+=reaction.count
         elif str(reaction)==no:
@@ -1049,7 +1127,6 @@ async def legis():
         msgid = msg.id
         msg = await channel.fetch_message(msgid)
         for reaction in msg.reactions:
-            print(reaction)
             if str(reaction)==yes:
                 ja+=reaction.count
             elif str(reaction)==no:
@@ -1070,7 +1147,6 @@ async def legis():
             msgid = msg.id
             msg = await channel.fetch_message(msgid)
             for reaction in msg.reactions:
-                print(reaction)
                 if str(reaction)==yes:
                     ja+=reaction.count
                 elif str(reaction)==no:
