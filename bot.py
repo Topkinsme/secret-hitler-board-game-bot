@@ -47,6 +47,8 @@ async def on_ready():
     global gamestate
     global starttime
     global logz
+    global active
+    active=[]
     lobby = bot.get_channel(754034408410972181)
     peochannel = bot.get_channel(706771948708823050)
     annchannel = bot.get_channel(760783052745080902)
@@ -95,12 +97,16 @@ async def on_ready():
       await forceend(ctx)
       dump()
 
-        
+@tasks.loop(minutes=1)
+async def my_loop():
+    global active
+    active=[]     
 
-        
+
 @bot.event
 async def on_message(message): 
     global userd
+    global active
     if message.author.id == 706771257256968243:
         return
     '''if message.channel.id!=754034408410972181:
@@ -110,6 +116,7 @@ async def on_message(message):
     ath=str(message.author.id)
     if ath not in userd['users']:
       makeacc(ath)
+    active.append(str(message.author.id))
     await bot.process_commands(message)   
     
   
@@ -234,6 +241,14 @@ async def logout(ctx):
     '''Logs out the bot'''
     await ctx.send("Logging out.")
     await bot.logout()
+
+@bot.command()
+@commands.has_role("Admin")
+async def purge(ctx,number=5):
+    '''Deletes a ceratin number of messages. <Admin>'''
+    chnl=ctx.channel
+    await chnl.purge(limit=number+1)
+    await ctx.send("Purged {} messages.".format(number))
 
 @bot.command()
 @commands.has_role("Admin")
@@ -853,6 +868,15 @@ async def round():
         effect="**If a facist law is enacted, the fascists will win.**"
     await lobby.send("Your president is {}. Please nominate a person using !nominate. \n {}".format(prez.mention,effect))
     logz.add_line("President was {}".format(prez.mention))
+    strike=2
+    while gamestate==2:
+      await asyncio.sleep(60)
+      if data['power']['prez'] not in active:
+        await lobby.send(f"{prez.mention}, you have not sent a message for atleast a minute now, send something or you shall be skipped in {strike} minute(s).")
+        strike-=1
+      if strike==-1:
+        await afkprez()
+        break
     dump()
 
 @bot.command(aliases=["myr"])
@@ -1359,6 +1383,18 @@ async def fail():
       await lobby.send("Time for next round!")
       await round()
     dump()
+  
+async def afkprez():
+  global data
+  global logz
+  await lobby.send("Your president has been afk for far too long.")
+  logz.add_line("The president was afk.")
+  await board(lobby)
+  await lobby.send("You have 20 seconds to discuss before the next round starts.")
+  await asyncio.sleep(20)
+  await lobby.send("Time for next round!")
+  await round()
+  
     
 async def winchecks():
     global gamestate
