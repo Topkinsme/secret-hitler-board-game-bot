@@ -52,7 +52,7 @@ async def on_ready():
     lobby = bot.get_channel(754034408410972181)
     peochannel = bot.get_channel(706771948708823050)
     annchannel = bot.get_channel(760783052745080902)
-    #no pls await lobby.send("Who's up for a game?! :smiley:")
+    await lobby.send("Who's up for a game?! :smiley:")
     await annchannel.send("The bot is online!")
     await bot.change_presence(activity=discord.Game(name="Secret Hitler!", type=1))
     try:
@@ -986,7 +986,7 @@ async def nominate(ctx,user:discord.Member):
         pass
     gamestate =3
     data['gamestate']=3
-    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 60 seconds. React with ⛔ if you wish to skip. If everyone in game votes to skip, it will be skipped.".format(user.mention))
+    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 60 seconds. React with ⛔ if you wish to fastforward this vote. If everyone in game votes to skip, it will be skipped.".format(user.mention))
     logz.add_line("{} was nominated.".format(user.mention))
     yes= "✅"
     no="❎"
@@ -1351,8 +1351,7 @@ async def passprez(ctx,user:discord.Member):
         return
     await lobby.send("The president has chosen {} as the next president. Please wait a few seconds and the next round will start.".format(user.mention))
     logz.add_line("The president chose {} to be the next president.".format(user.mention))
-    id=user.id
-    data['power']['prez']=str(prez.id)
+    data['power']['prez']=str(user.id)
     canpass=2
     dump()
 
