@@ -52,7 +52,7 @@ async def on_ready():
     lobby = bot.get_channel(754034408410972181)
     peochannel = bot.get_channel(706771948708823050)
     annchannel = bot.get_channel(760783052745080902)
-    await lobby.send("Who's up for a game?! :smiley:")
+    #await lobby.send("Who's up for a game?! :smiley:")
     await annchannel.send("The bot is online!")
     await bot.change_presence(activity=discord.Game(name="Secret Hitler!", type=1))
     try:
@@ -88,6 +88,7 @@ async def on_ready():
         userd={}
         userd['users']={}
         await annchannel.send("The notif list has been erased!!!")
+    #active_loop.start()
     if len(data['signedup'])>0 and gamestate==0:
         starttime=datetime.datetime.now()
         timeoutloop.start()
@@ -98,7 +99,7 @@ async def on_ready():
       dump()
 
 @tasks.loop(minutes=1)
-async def my_loop():
+async def active_loop():
     global active
     active=[]     
 
@@ -116,7 +117,8 @@ async def on_message(message):
     ath=str(message.author.id)
     if ath not in userd['users']:
       makeacc(ath)
-    active.append(str(message.author.id))
+    if str(message.author.id) not in active:
+      active.append(str(message.author.id))
     await bot.process_commands(message)   
     
   
@@ -130,7 +132,7 @@ async def on_member_join(member):
 @bot.event
 async def on_member_remove(member):
     global data
-    await annchannel.send("{} has left the server.".format(member.mention))
+    await annchannel.send(f"{member.mention} ({member.name}) has left the server.")
     ath=str(member.id)
     if ath in userd['users']:
       userd['users'].pop(ath)
@@ -437,6 +439,17 @@ async def demote(ctx):
   await ctx.author.remove_roles(role)
   await ctx.send("You have been demoted , {}".format(ctx.author.mention))
 
+@bot.command(aliases=["stasis"])
+@commands.has_role("Game Master")
+async def modifystasis(ctx,member:discord.Member,num):
+  '''Use this command to assign or remove someone's stasis'''
+  global userd
+  ath=str(member.id)
+  userd['users'][ath]['stasis']=num
+  await ctx.send("Done.")
+  dump()
+
+
 #all
 @bot.command()
 async def ping(ctx):
@@ -552,6 +565,9 @@ async def signup(ctx):
         await ctx.send("Either games have been turned off or a game is currently in progress. Try again later.")
         return
     ath=str(ctx.author.id)
+    if int(userd['users'][ath]['stasis'])>0:
+      await ctx.send("Your account is currently in stasis. Please wait a few games before playing. Contact the Game Master if this is a mistake.")
+      return
     if not ath in data['signedup']:
         if len(data['signedup'])>9:
             await ctx.send("Lobby at maximum capacity. Please try again later!")
@@ -640,7 +656,7 @@ async def time(ctx):
     return
   try:
     timeo = str(timedelta(minutes=30) -(datetime.datetime.now()-starttime))
-    await ctx.send("{} time left before the lobby is timed out".format(timeo[:-7]))
+    await ctx.send("{} - time left before the lobby is timed out".format(timeo[:-7]))
   except:
     await ctx.send("Lobby empty or a game is going on. Or there was a error.")
 
@@ -656,6 +672,9 @@ async def extend(ctx):
         await ctx.send("Wrong gamestate.")
         return
   try:
+    if datetime.datetime.now()-(starttime+timedelta(minutes=5))<timedelta(minutes=0):
+      await ctx.send("You cannot extend the time beyond 30 mins. Please wait.")
+      return
     starttime=starttime+timedelta(minutes=5)
     await ctx.send("Done! The lobby timeout timer has been extended by 5 mins.")
   except:
@@ -799,6 +818,7 @@ async def round():
     global canpass
     global prez
     global logz
+    global userd
     guildd=bot.get_guild(706761016041537539)
     gamestate =2
     data['gamestate']=2
@@ -870,13 +890,19 @@ async def round():
     logz.add_line("President was {}".format(prez.mention))
     strike=2
     while gamestate==2:
+      active_loop.start()
       await asyncio.sleep(60)
       if data['power']['prez'] not in active:
         await lobby.send(f"{prez.mention}, you have not sent a message for atleast a minute now, send something or you shall be skipped in {strike} minute(s).")
         strike-=1
       if strike==-1:
+        ath=str(data['power']['prez'])
+        if int(userd['users'][ath]['stasis'])==0:
+          userd['users'][ath]['stasis']=1
+        active_loop.stop()
         await afkprez()
         break
+    active_loop.stop()
     dump()
 
 @bot.command(aliases=["myr"])
@@ -1564,10 +1590,35 @@ async def end(who):
           await userr.edit(nick=name)
         except:
           pass
+        if userd['users'][ath]['games']>20:
+          perc=(userd['users'][ath]['won']/userd['users'][ath]['games'])*100
+          if perc>95 or userd['users'][ath]['games']>999:
+            role = discord.utils.get(guildd.roles, name="Master")
+            await userr.add_roles(role)
+          elif perc>90 or userd['users'][ath]['games']>199:
+            role = discord.utils.get(guildd.roles, name="Diamond")
+            await userr.add_roles(role)
+          elif perc>85 or userd['users'][ath]['games']>149:
+            role = discord.utils.get(guildd.roles, name="Platinum")
+            await userr.add_roles(role)
+          elif perc>80 or userd['users'][ath]['games']>99:
+            role = discord.utils.get(guildd.roles, name="Gold")
+            await userr.add_roles(role)
+          elif perc>70 or userd['users'][ath]['games']>49:
+            role = discord.utils.get(guildd.roles, name="Silver")
+            await userr.add_roles(role)
+          elif userd['users'][ath]['games']>20:
+            role = discord.utils.get(guildd.roles, name="Bronze")
+            await userr.add_roles(role)
+
     chnl=discord.utils.get(guildd.channels,name="lobby")
     await chnl.set_permissions(guildd.default_role,read_messages=True,send_messages=True)
     chnl=discord.utils.get(guildd.channels,name="lobby")
     await chnl.set_permissions(role1,read_messages=True,send_messages=True)
+    for ath in userd['users']:
+      if int(userd['users'][ath]['stasis'])!=0:
+        userd['users'][ath]['stasis']-=1
+      
     data={}
     data['signedup']={}
     data['players']={}
@@ -1706,6 +1757,21 @@ async def cards(ctx):
     ndiscard= 17 -(ndeck+nboard)
   await ctx.send("`{}` cards are in the pile , `{}` on the board and `{}` in the discard pile.".format(ndeck,nboard,ndiscard))
 
+@bot.command(aliases=["un"])
+async def updatename(ctx):
+    '''Use this command to update your name.'''
+    ath=str(ctx.author.id)
+    name=ctx.author.name
+    if len(name)>25:
+            name=name[:25]
+    name+=" [{}/{}]".format(userd['users'][ath]['won'],userd['users'][ath]['games'])
+    try:
+        await ctx.author.edit(nick=name)
+        await ctx.send("Done.")
+    except Exception as e:
+        pass
+        await ctx.send(f"Not done. Error. {e}")
+
 def makeacc(ath):
       global userd
       guildd=bot.get_guild(706761016041537539)
@@ -1726,6 +1792,7 @@ def makeacc(ath):
       userd['users'][ath]['wonfe']= 0
       userd['users'][ath]['wonfhe']= 0
       userd['users'][ath]['notif']=0
+      userd['users'][ath]['stasis']=0
       dump()
 
 def dump():
