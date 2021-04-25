@@ -52,7 +52,7 @@ async def on_ready():
     lobby = bot.get_channel(754034408410972181)
     peochannel = bot.get_channel(706771948708823050)
     annchannel = bot.get_channel(760783052745080902)
-    #await lobby.send("Who's up for a game?! :smiley:")
+    await lobby.send("Who's up for a game?! :smiley:")
     await annchannel.send("The bot is online!")
     await bot.change_presence(activity=discord.Game(name="Secret Hitler!", type=1))
     try:
@@ -889,8 +889,8 @@ async def round():
     await lobby.send("Your president is {}. Please nominate a person using !nominate. \n {}".format(prez.mention,effect))
     logz.add_line("President was {}".format(prez.mention))
     strike=2
+    active_loop.start()
     while gamestate==2:
-      active_loop.start()
       await asyncio.sleep(60)
       if data['power']['prez'] not in active:
         await lobby.send(f"{prez.mention}, you have not sent a message for atleast a minute now, send something or you shall be skipped in {strike} minute(s).")
