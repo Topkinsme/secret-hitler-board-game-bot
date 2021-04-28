@@ -88,7 +88,6 @@ async def on_ready():
         userd={}
         userd['users']={}
         await annchannel.send("The notif list has been erased!!!")
-    #active_loop.start()
     if len(data['signedup'])>0 and gamestate==0:
         starttime=datetime.datetime.now()
         timeoutloop.start()
@@ -97,11 +96,7 @@ async def on_ready():
       ctx=await bot.get_context(msg)
       await forceend(ctx)
       dump()
-
-@tasks.loop(minutes=1)
-async def active_loop():
-    global active
-    active=[]     
+     
 
 
 @bot.event
@@ -552,6 +547,11 @@ async def profile(ctx,user:discord.User=None):
     elif userd['users'][user]['notif']==1:
       text="1 - Notifications On"
     profile.add_field(name="Notify Mode-",value=text,inline=False)
+    if int(userd['users'][user]['stasis'])==0:
+      text="0 - No stasis."
+    else:
+      text=f"{userd['users'][user]['stasis']} - On stasis."
+    profile.add_field(name="Stasis-",value=text,inline=False)
     await ctx.send(embed=profile)
 
     
@@ -795,7 +795,11 @@ async def start():
         try:
             await userr.send(embed=roleinfo)
         except:
-            print("Someone has blocked me")
+            msg=await lobby.send("Terribly sorry for the inconvenience, but it seems like one or more players in the game have blocked my dms. Please unblock me, or allow server members to contact you if you want to play the game.")
+            ctx=await bot.get_context(msg)
+            await forceend(ctx)
+            dump()
+            return
         players.append(str(userr.id))
         logz.add_line("{} had the role {}".format(userr.mention,data['players'][ath]['role']))
     print(players)
@@ -819,6 +823,7 @@ async def round():
     global prez
     global logz
     global userd
+    global active
     guildd=bot.get_guild(706761016041537539)
     gamestate =2
     data['gamestate']=2
@@ -889,20 +894,19 @@ async def round():
     await lobby.send("Your president is {}. Please nominate a person using !nominate. \n {}".format(prez.mention,effect))
     logz.add_line("President was {}".format(prez.mention))
     strike=2
-    active_loop.start()
     while gamestate==2:
       await asyncio.sleep(60)
+      active=[]
       if data['power']['prez'] not in active:
         await lobby.send(f"{prez.mention}, you have not sent a message for atleast a minute now, send something or you shall be skipped in {strike} minute(s).")
         strike-=1
       if strike==-1:
         ath=str(data['power']['prez'])
         if int(userd['users'][ath]['stasis'])==0:
-          userd['users'][ath]['stasis']=1
-        active_loop.stop()
+          userd['users'][ath]['stasis']=2
         await afkprez()
         break
-    active_loop.stop()
+
     dump()
 
 @bot.command(aliases=["myr"])
