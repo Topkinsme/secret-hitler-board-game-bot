@@ -896,7 +896,6 @@ async def round():
     strike=2
     while gamestate==2:
       await asyncio.sleep(60)
-      active=[]
       if data['power']['prez'] not in active:
         await lobby.send(f"{prez.mention}, you have not sent a message for atleast a minute now, send something or you shall be skipped in {strike} minute(s).")
         strike-=1
@@ -906,7 +905,7 @@ async def round():
           userd['users'][ath]['stasis']=2
         await afkprez()
         break
-
+      active=[]
     dump()
 
 @bot.command(aliases=["myr"])
