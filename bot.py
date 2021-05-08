@@ -365,6 +365,14 @@ async def compreset(ctx):
 
 @bot.command()
 @commands.has_role("Game Master")
+async def forcestart(ctx):
+    '''Use this command to force start the game.'''
+    await ctx.send("Starting the game. No checks were conducted. Use !forceend to end the game if there were any issues.")
+    await start()
+
+
+@bot.command()
+@commands.has_role("Game Master")
 async def forceend(ctx):
     '''Use this command to force end the game.'''
     global data
@@ -483,21 +491,36 @@ Fascist Board if 9-10 players - :mag::mag::pen_ballpoint::dagger::dagger::crown:
 :crown:  - Victory.""")
     
 @bot.command(aliases=["notif"])
-async def notifyme(ctx):
-    '''Use this to add or remove yourself from the notify list.'''
+async def notifyme(ctx,notify_mode="1"):
+    '''Use this to add or remove yourself from the notify list. Type "on" or 1 to have the normal mode, "off" or 0 to turn it off, type "super" or 2 for super notify mode.'''
     global data
     global userd
     guildd=bot.get_guild(706761016041537539)
     ath=str(ctx.author.id)
     if ath not in userd['users']:
       makeacc(ath)
-    
-    if userd['users'][ath]['notif']==0:
+
+    try:
+      if int(notify_mode)==1:
+        notify_mode="on"
+      elif int(notify_mode)==0:
+        notify_mode="off"
+      elif int(notify_mode)==2:
+        notify_mode="super"
+    except:
+      pass
+
+    if notify_mode.lower()=="on":
         userd['users'][ath]['notif']=1
         await ctx.send("You will now be notified when future games occur.")
-    else:
+    elif notify_mode.lower()=="off":
         userd['users'][ath]['notif']=0
         await ctx.send("You will now **not** be notified when future games occur.")
+    elif notify_mode.lower()=="super":
+        userd['users'][ath]['notif']=2
+        await ctx.send("You will now be notified when future games occur, even if you are offline.")
+    else:
+      await ctx.send("Invalid choice.")
     dump()
 
 @bot.command()
@@ -518,6 +541,9 @@ async def notify(ctx):
               status=str(userr.status)
               if status=="online" or status=="idle" or status=="dnd":
                   msg+="<@{}> ".format(ath)
+          elif userd['users'][ath]['notif']==2:
+              if ath not in data['signedup']:
+                msg+="<@{}> ".format(ath)
         await ctx.send(msg)
     else:
         a = str(lastping)
@@ -546,6 +572,8 @@ async def profile(ctx,user:discord.User=None):
       text="0 - Notifications Off"
     elif userd['users'][user]['notif']==1:
       text="1 - Notifications On"
+    elif userd['users'][user]['notif']==2:
+      text="2 - Super Notifications On"
     profile.add_field(name="Notify Mode-",value=text,inline=False)
     if int(userd['users'][user]['stasis'])==0:
       text="0 - No stasis."
@@ -967,7 +995,7 @@ async def gamerolesinfo(ctx):
   msg=""
   for ath in data['players']:
     userr=discord.utils.get(guildd.members,id=int(ath))
-    msg+="{} has the role {}.\n".format(userr.mention,data['players'][ath]['role'])
+    msg+="{}({}) has the role {}.\n".format(userr.mention,userr.name,data['players'][ath]['role'])
   msg+="***__DO NOT DM THIS MESSAGE OR PASS THIS INFORMATION TO ANYONE IN GAME. DOING SO CAN GET YOU BANNED.__***"
   await ctx.author.send(msg)
   await ctx.send("The information was sent to you in your private chat. Please refrain from sharing the information here, as people might be trying to play along.")
@@ -1015,11 +1043,11 @@ async def nominate(ctx,user:discord.Member):
         pass
     gamestate =3
     data['gamestate']=3
-    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 60 seconds. React with ⛔ if you wish to fastforward this vote. If everyone in game votes to skip, it will be skipped.".format(user.mention))
+    msg = await lobby.send("The president has nominated {}! Please react to this message to cast your votes. You have 60 seconds. React with ⏩ if you wish to fastforward this vote. If everyone in game votes to skip, it will be skipped.".format(user.mention))
     logz.add_line("{} was nominated.".format(user.mention))
     yes= "✅"
     no="❎"
-    skip="⛔"
+    skip="⏩"
     await msg.add_reaction(yes)
     await msg.add_reaction(no)
     await msg.add_reaction(skip)
@@ -1104,16 +1132,26 @@ async def legis():
             sec+=reaction.count
         elif str(reaction)==three:
             tir+=reaction.count
-    
+
     if fir>sec and fir>tir:
+        do=1
+    elif sec>fir and sec>tir:
+        do=2
+    elif tir>fir and tir>sec:
+        do=3
+    else:
+        dos=[1,2,3]
+        do=random.choice(dos)
+
+    if do==1:
             throw=first
             keep=second+" and the "+third
             first="[Discarded]"
-    elif sec>fir and sec>tir:
+    elif do==2:
             throw=second
             keep=first+" and the "+third
             second="[Discarded]"
-    else:
+    elif do==3:
             throw=third
             keep=first+" and the "+second
             third="[Discarded]"
@@ -1142,22 +1180,33 @@ async def legis():
             sec+=reaction.count
         elif str(reaction)==three:
             tir+=reaction.count
+
     if fir>sec and fir>tir:
+        do=1
+    elif sec>fir and sec>tir:
+        do=2
+    elif tir>fir and tir>sec:
+        do=3
+    else:
+        dos=[1,2,3]
+        do=random.choice(dos)
+
+    if do==1:
             if first=="[Discarded]":
                 second="[Discarded]"
             else:
                 first="[Discarded]"
-    elif sec>fir and sec>tir:
+    elif do==2:
             if second=="[Discarded]":
                 third="[Discarded]"
             else:
                 second="[Discarded]"
-    else:
+    elif do==3:
             if third=="[Discarded]":
                 first="[Discarded]"
             else:
                 third="[Discarded]"
-            third="[Discarded]"
+
     if first!="[Discarded]":
         keep=first
         data['card']=first
@@ -1248,6 +1297,8 @@ async def picked():
     else:
       await lobby.send("You have 20 seconds to discuss before the next round starts.")
       await asyncio.sleep(20)
+      if gamestate!=5:
+        return
       await lobby.send("Time for next round!")
       await round()
     dump()
