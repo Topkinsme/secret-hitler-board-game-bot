@@ -1093,7 +1093,7 @@ async def nominate(ctx,user:discord.Member):
         
         
     print(ja,nein)
-    await lobby.send(f"({ja}) Ja- {jawho}\n({nein}) Nein- {neinwho}")
+    await lobby.send(f"Results-\n({int(ja)-1}) Ja- {jawho}\n({int(nein)-1}) Nein- {neinwho}")
     dump()
     if ja>nein:
         logz.add_line("{} was successfully elected.".format(user.mention))
