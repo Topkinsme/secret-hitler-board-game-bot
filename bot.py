@@ -921,9 +921,10 @@ async def round():
         effect="**If a facist law is enacted, the fascists will win.**"
     await lobby.send("Your president is {}. Please nominate a person using !nominate. \n {}".format(prez.mention,effect))
     logz.add_line("President was {}".format(prez.mention))
-    strike=2
+    strike=4
     while gamestate==2:
       await asyncio.sleep(60)
+      global active
       if data['power']['prez'] not in active:
         await lobby.send(f"{prez.mention}, you have not sent a message for atleast a minute now, send something or you shall be skipped in {strike} minute(s).")
         strike-=1
@@ -1069,14 +1070,30 @@ async def nominate(ctx,user:discord.Member):
         break
       x+=1
     ja=0
+    jawho=""
+    neinwho=""
     nein=0
     msg = await channel.fetch_message(msgid)
-    for reaction in msg.reactions:        
+    for reaction in msg.reactions:   
+           
         if str(reaction)==yes:
+            users = await reaction.users().flatten() 
+            for userr in users:
+              if userr.id==706771257256968243:
+                continue
+              jawho+=f"{userr.mention} " 
             ja+=reaction.count
         elif str(reaction)==no:
+            users = await reaction.users().flatten() 
+            for userr in users:
+              if userr.id==706771257256968243:
+                continue
+              neinwho+=f"{userr.mention} " 
             nein+=reaction.count
+        
+        
     print(ja,nein)
+    await lobby.send(f"({ja}) Ja- {jawho}\n({nein}) Nein- {neinwho}")
     dump()
     if ja>nein:
         logz.add_line("{} was successfully elected.".format(user.mention))
