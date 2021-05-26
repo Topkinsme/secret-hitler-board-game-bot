@@ -137,7 +137,7 @@ async def on_member_remove(member):
       data['players'].pop(ath)
       data['signedup'].pop(ath)
       await forceend(ctx)
-      dump()
+    dump()
 
 @bot.event
 async def on_reaction_add(reaction,user):
