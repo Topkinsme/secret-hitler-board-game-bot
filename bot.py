@@ -49,7 +49,7 @@ async def on_ready():
     global logz
     global active
     active=[]
-    lobby = bot.get_channel(754034408410972181)
+    lobby = bot.get_channel(754034408410972181) 
     peochannel = bot.get_channel(706771948708823050)
     annchannel = bot.get_channel(760783052745080902)
     await lobby.send("Who's up for a game?! :smiley:")
@@ -1455,6 +1455,10 @@ async def passprez(ctx,user:discord.Member):
 async def fail():
     global data
     global logz
+    guildd=bot.get_guild(706761016041537539)
+    role = discord.utils.get(guildd.roles, name="Players")
+    chnl=discord.utils.get(guildd.channels,name="lobby")
+    await chnl.set_permissions(role,read_messages=True,send_messages=True)
     await lobby.send("The government has failed!")
     data['failcounter']+=1
     if data['failcounter']>2:
@@ -1470,7 +1474,8 @@ async def fail():
         data['card']=nexkt
         await winchecks()
         data['failcounter']=0
-    if gamestate!=3:
+    allowedgs=[3,4]
+    if gamestate not in allowedgs:
       return
     else:
       await board(lobby)
